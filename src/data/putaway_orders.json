@@ -1,0 +1,138 @@
+{
+    "jsonrpc": "2.0",
+    "id": null,
+    "result": [
+        {
+            "id": 2,
+            "name": "VWH/STOR/00001",
+            "receive_from": "Godrej Interio",
+            "operation_type": "Storage",
+            "destination_location": "Shelf 001",
+            "state": "done",
+            "scheduled_date": "2025-03-04 07:00:17",
+            "effective_date": "2025-03-04 07:30:08",
+            "source_document": "P00001",
+            "storage_facility": 60.0,
+            "availed_storage_facility": 0.0,
+            "products": [
+                {
+                    "product_id": 2,
+                    "product": "Welding Machine",
+                    "product_code": "WGM001",
+                    "demand_quantity": 10.0,
+                    "quantity": 10.0,
+                    "uom": "Units",
+                    "storage_facility": 50.0
+                },
+                {
+                    "product_id": 1,
+                    "product": "Agitador",
+                    "product_code": "AGT001",
+                    "demand_quantity": 5.0,
+                    "quantity": 5.0,
+                    "uom": "Units",
+                    "storage_facility": 10.0
+                }
+            ]
+        },
+        {
+            "id": 6,
+            "name": "VWH/STOR/00002",
+            "receive_from": "Hindustan Unilever Limited",
+            "operation_type": "Storage",
+            "destination_location": "Shelf 002",
+            "state": "done",
+            "scheduled_date": "2025-03-04 08:36:25",
+            "effective_date": "2025-03-04 08:37:07",
+            "source_document": "P00002",
+            "storage_facility": 75.0,
+            "availed_storage_facility": 0.0,
+            "products": [
+                {
+                    "product_id": 1,
+                    "product": "Agitador",
+                    "product_code": "AGT001",
+                    "demand_quantity": 25.0,
+                    "quantity": 25.0,
+                    "uom": "Units",
+                    "storage_facility": 50.0
+                },
+                {
+                    "product_id": 2,
+                    "product": "Welding Machine",
+                    "product_code": "WGM001",
+                    "demand_quantity": 5.0,
+                    "quantity": 5.0,
+                    "uom": "Units",
+                    "storage_facility": 25.0
+                }
+            ]
+        },
+        {
+            "id": 10,
+            "name": "VWH/STOR/00003",
+            "receive_from": "",
+            "operation_type": "Storage",
+            "destination_location": "Shelf 004",
+            "state": "done",
+            "scheduled_date": "2025-03-04 08:53:43",
+            "effective_date": "2025-03-04 08:54:05",
+            "source_document": "P00003",
+            "storage_facility": 69.0,
+            "availed_storage_facility": 0.0,
+            "products": [
+                {
+                    "product_id": 1,
+                    "product": "Agitador",
+                    "product_code": "AGT001",
+                    "demand_quantity": 22.0,
+                    "quantity": 22.0,
+                    "uom": "Units",
+                    "storage_facility": 44.0
+                },
+                {
+                    "product_id": 2,
+                    "product": "Welding Machine",
+                    "product_code": "WGM001",
+                    "demand_quantity": 5.0,
+                    "quantity": 5.0,
+                    "uom": "Units",
+                    "storage_facility": 25.0
+                }
+            ]
+        },
+        {
+            "id": 14,
+            "name": "VWH/STOR/00004",
+            "receive_from": "Godrej Interio",
+            "operation_type": "Storage",
+            "destination_location": "Shelf 001",
+            "state": "done",
+            "scheduled_date": "2025-03-04 10:05:04",
+            "effective_date": "2025-03-04 10:08:21",
+            "source_document": "P00004",
+            "storage_facility": 60.0,
+            "availed_storage_facility": 7.0,
+            "products": [
+                {
+                    "product_id": 2,
+                    "product": "Welding Machine",
+                    "product_code": "WGM001",
+                    "demand_quantity": 10.0,
+                    "quantity": 10.0,
+                    "uom": "Units",
+                    "storage_facility": 50.0
+                },
+                {
+                    "product_id": 1,
+                    "product": "Agitador",
+                    "product_code": "AGT001",
+                    "demand_quantity": 5.0,
+                    "quantity": 5.0,
+                    "uom": "Units",
+                    "storage_facility": 10.0
+                }
+            ]
+        }
+    ]
+}

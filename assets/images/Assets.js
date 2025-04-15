@@ -1,0 +1,17 @@
+export const Assets = {
+    ic_scan: require('../images/ic-scan.png'),
+    ic_scanned: require('../images/ic-scanned.png'),
+    img_inbound: require('../images/Inbound.png'),
+    img_outbound: require('../images/Outbound.png'),
+    img_internal: require('../images/Internal.png'),
+    img_printlabel: require('../images/Printlabel.png'),
+    img_ASN: require('../images/ASN.png'),
+    img_receipt: require('../images/Receipt.png'),
+    img_putaway: require('../images/Putaway.png'),
+    img_order: require('../images/SalesOrder.png'),
+    img_picking: require('../images/Picking.png'),
+    img_deliveries: require('../images/Deliveries.png'),
+    img_logo: require('../images/Light-Version-Logo.png'),
+    icon_inbound: require('../images/inbound-icon.png'),
+    img_launcher_logo: require('../images/logo.png'),
+}

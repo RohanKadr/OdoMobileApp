@@ -1,0 +1,211 @@
+{
+    "jsonrpc": "2.0",
+    "id": null,
+    "result": [
+        {
+            "id": 5,
+            "name": "S00005",
+            "customer": "Godrej Interio",
+            "customer_address": "Godrej Interio\n\n\n 410014\nOrissa OR\nIndia",
+            "order_date": "2025-03-04 10:11:06",
+            "pricelist": "Default",
+            "payment_terms": "",
+            "state": "sale",
+            "gst_treatment": "Within Orissa",
+            "products": [
+                {
+                    "product_id": 1,
+                    "product": "Agitador",
+                    "product_code": "AGT001",
+                    "quantity": 4.0,
+                    "delivered_qty": 4.0,
+                    "invoiced_qty": 0.0,
+                    "uom": "Units",
+                    "unit_price": 150.0,
+                    "subtotal": 600.0,
+                    "taxes": [
+                        "5% GST"
+                    ]
+                },
+                {
+                    "product_id": 2,
+                    "product": "Welding Machine",
+                    "product_code": "WGM001",
+                    "quantity": 2.0,
+                    "delivered_qty": 2.0,
+                    "invoiced_qty": 0.0,
+                    "uom": "Units",
+                    "unit_price": 200.0,
+                    "subtotal": 400.0,
+                    "taxes": [
+                        "5% GST"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 3,
+            "name": "S00003",
+            "customer": "Godrej Interio",
+            "customer_address": "Godrej Interio\n\n\n 410014\nOrissa OR\nIndia",
+            "order_date": "2025-03-04 08:55:12",
+            "pricelist": "Default",
+            "payment_terms": "",
+            "state": "sale",
+            "gst_treatment": "Within Orissa",
+            "products": [
+                {
+                    "product_id": 1,
+                    "product": "Agitador",
+                    "product_code": "AGT001",
+                    "quantity": 3.0,
+                    "delivered_qty": 3.0,
+                    "invoiced_qty": 0.0,
+                    "uom": "Units",
+                    "unit_price": 150.0,
+                    "subtotal": 450.0,
+                    "taxes": [
+                        "5% GST"
+                    ]
+                },
+                {
+                    "product_id": 2,
+                    "product": "Welding Machine",
+                    "product_code": "WGM001",
+                    "quantity": 1.0,
+                    "delivered_qty": 1.0,
+                    "invoiced_qty": 0.0,
+                    "uom": "Units",
+                    "unit_price": 200.0,
+                    "subtotal": 200.0,
+                    "taxes": [
+                        "5% GST"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "name": "S00004",
+            "customer": "Hindustan Unilever Limited",
+            "customer_address": "Hindustan Unilever Limited\n\n\n 41015\nGujarat GJ\nIndia",
+            "order_date": "2025-03-04 08:54:42",
+            "pricelist": "Default",
+            "payment_terms": "",
+            "state": "draft",
+            "gst_treatment": "Inter State",
+            "products": [
+                {
+                    "product_id": 1,
+                    "product": "Agitador",
+                    "product_code": "AGT001",
+                    "quantity": 1.0,
+                    "delivered_qty": 0.0,
+                    "invoiced_qty": 0.0,
+                    "uom": "Units",
+                    "unit_price": 150.0,
+                    "subtotal": 150.0,
+                    "taxes": [
+                        "5% IGST S"
+                    ]
+                },
+                {
+                    "product_id": 2,
+                    "product": "Welding Machine",
+                    "product_code": "WGM001",
+                    "quantity": 1.0,
+                    "delivered_qty": 0.0,
+                    "invoiced_qty": 0.0,
+                    "uom": "Units",
+                    "unit_price": 200.0,
+                    "subtotal": 200.0,
+                    "taxes": [
+                        "5% IGST S"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "name": "S00002",
+            "customer": "Hindustan Unilever Limited",
+            "customer_address": "Hindustan Unilever Limited\n\n\n 41015\nGujarat GJ\nIndia",
+            "order_date": "2025-03-04 08:49:49",
+            "pricelist": "Default",
+            "payment_terms": "",
+            "state": "sale",
+            "gst_treatment": "Inter State",
+            "products": [
+                {
+                    "product_id": 1,
+                    "product": "Agitador",
+                    "product_code": "AGT001",
+                    "quantity": 1.0,
+                    "delivered_qty": 1.0,
+                    "invoiced_qty": 0.0,
+                    "uom": "Units",
+                    "unit_price": 150.0,
+                    "subtotal": 150.0,
+                    "taxes": [
+                        "5% IGST S"
+                    ]
+                },
+                {
+                    "product_id": 2,
+                    "product": "Welding Machine",
+                    "product_code": "WGM001",
+                    "quantity": 1.0,
+                    "delivered_qty": 1.0,
+                    "invoiced_qty": 0.0,
+                    "uom": "Units",
+                    "unit_price": 200.0,
+                    "subtotal": 200.0,
+                    "taxes": [
+                        "5% IGST S"
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 1,
+            "name": "S00001",
+            "customer": "Godrej Interio",
+            "customer_address": "Godrej Interio\n\n\n 410014\nOrissa OR\nIndia",
+            "order_date": "2025-03-04 07:30:35",
+            "pricelist": "Default",
+            "payment_terms": "",
+            "state": "sale",
+            "gst_treatment": "Within Orissa",
+            "products": [
+                {
+                    "product_id": 1,
+                    "product": "Agitador",
+                    "product_code": "AGT001",
+                    "quantity": 1.0,
+                    "delivered_qty": 1.0,
+                    "invoiced_qty": 0.0,
+                    "uom": "Units",
+                    "unit_price": 150.0,
+                    "subtotal": 150.0,
+                    "taxes": [
+                        "5% GST"
+                    ]
+                },
+                {
+                    "product_id": 2,
+                    "product": "Welding Machine",
+                    "product_code": "WGM001",
+                    "quantity": 1.0,
+                    "delivered_qty": 1.0,
+                    "invoiced_qty": 0.0,
+                    "uom": "Units",
+                    "unit_price": 200.0,
+                    "subtotal": 200.0,
+                    "taxes": [
+                        "5% GST"
+                    ]
+                }
+            ]
+        }
+    ]
+}

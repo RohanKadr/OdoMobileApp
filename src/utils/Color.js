@@ -1,0 +1,16 @@
+export const Colors = {
+    theme: '#083c84',
+    white: '#FFFFFF',
+    darkcyan: '#008b8b',
+    black: '#000',
+    jadegreen: '#EAF5F6',
+    reddish_pink:'#FF7B7B',
+    gray: '#8F8F8F',
+    pastel_pink: '#FFC1C1',
+    salmon_pink: '#fa9d9d',
+    deep_cyan: '#017E84',
+    mint_green: '#7BFFB3',
+    pastel_green: '#C1FFD1',
+    green: '#4BB543',
+    red: '#FC100D',
+}
