@@ -1,0 +1,20 @@
+1) Here are the software requiremnts to run this app 
+  Node LTS 22.11.0
+  JAVA JDK 17
+  Android Studio - Meerket (2024.3.1)
+  visual studio code
+
+2) After installing set the path for java, android studio. Follow the below link for reference:
+   https://reactnative.dev/docs/set-up-your-environment
+  NOTE: Instead of chcoclatey set the environmen manually. 
+
+3) IF YOU WANT TO RUN IN PHYSICAL DEVICE (RECOMMENDED)
+  After setting as per the above given instruction open your android studio. 
+  Connect your physical device with your working device and make sure the android phone has developer mode enabled.
+  Turn on the usb debugging in the mobile phone and your device will be visible in the android studio's device manager section.
+
+4) Then open command prompt and go to the project directory and run this command.
+    npx react-native run-android
+
+5) The app will get installed and will run automatically.
+
