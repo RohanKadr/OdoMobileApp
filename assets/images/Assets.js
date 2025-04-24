@@ -14,4 +14,5 @@ export const Assets = {
     img_logo: require('../images/Light-Version-Logo.png'),
     icon_inbound: require('../images/inbound-icon.png'),
     img_launcher_logo: require('../images/logo.png'),
+    img_man: require('../images/man.png'),
 }

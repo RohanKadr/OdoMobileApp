@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     },
     inactiveIcon: {
         tintColor: Colors.gray,
-        opacity: 0.7,
+        opacity: 1,
     },
     tabText: {
         fontSize: wp('3%'),
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     },
     inactiveText: {
         color: Colors.darkcyan,
-        opacity: 0.7,
+        opacity: 1,
     },
     activeIndicator: {
         position: 'absolute',

@@ -10,14 +10,15 @@ import {
 } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { Colors } from '../utils/Color';
-import axios from 'axios';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';
 
 const InternalScreen = ({ route }) => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expandedReferences, setExpandedReferences] = useState({});
+    const [scanProgress, setScanProgress] = useState({});
     const navigation = useNavigation();
 
     useEffect(() => {
@@ -30,8 +31,8 @@ const InternalScreen = ({ route }) => {
             
             // Fetch data from both APIs concurrently
             const [api1Response, api2Response] = await Promise.all([
-                axios.get('https://run.mocky.io/v3/cc7762e2-7d7f-4266-8018-2d5610a65aa4'),
-                axios.get('https://run.mocky.io/v3/30f9e1fe-757f-45f0-87ae-6fb74c25aae2')
+                axios.get('http://192.168.0.120:8092/generic_wms/putaway_orders'),
+                axios.get('http://192.168.0.120:8092/generic_wms/picking_orders')
             ]);
 
             // Combine the results from both APIs
@@ -42,6 +43,25 @@ const InternalScreen = ({ route }) => {
 
             const transformedData = transformData(combinedResults);
             setData(transformedData);
+
+            // Initialize scan progress
+            const progress = {};
+            combinedResults.forEach(order => {
+                progress[order.name] = {
+                    pick: 0,
+                    stock: 0,
+                    put: 0,
+                    total: order.products.reduce((sum, product) => sum + product.quantity, 0),
+                    products: order.products.map(product => ({
+                        product_id: product.product_id,
+                        product_code: product.product_code,
+                        quantity: product.quantity,
+                        stock: 0
+                    })),
+                    source_document: order.source_document
+                };
+            });
+            setScanProgress(progress);
         } catch (error) {
             console.error('API Error:', error);
             Alert.alert('Error', 'Failed to fetch data. Check network or try later.');
@@ -56,7 +76,7 @@ const InternalScreen = ({ route }) => {
             order.products.forEach(product => {
                 transformedData.push({
                     id: `${order.id}-${product.product_id}`,
-                    vendor: order.receive_from,
+                    vendor: order.receive_from || order.pick_from,
                     product: product.product,
                     quantity: product.quantity,
                     reference: order.name,
@@ -65,10 +85,97 @@ const InternalScreen = ({ route }) => {
                     storagefacility: product.storage_facility,
                     effectiveDate: order.effective_date,
                     product_code: product.product_code,
+                    state: order.state,
+                    source_document: order.source_document,
                 });
             });
         });
         return transformedData;
+    };
+
+    const handleScanComplete = (reference, scannedData, isGood, scanType) => {
+        if (!isGood) {
+            Alert.alert('Scan Failed', 'Quality check failed for this scan');
+            return;
+        }
+
+        setScanProgress(prev => {
+            const newProgress = { ...prev };
+            const referenceData = newProgress[reference];
+
+            if (!referenceData) return prev;
+
+            console.log('Scan Completed:', {
+                reference,
+                scannedData,
+                scanType,
+                source_document: referenceData.source_document
+            });
+
+            if (scanType === 'pick' || scanType === 'put') {
+                if (scannedData && scannedData === referenceData.source_document) {
+                    newProgress[reference][scanType] = 1;
+                } else {
+                    Alert.alert('Error', 'Scanned document does not match the source document');
+                }
+            } else if (scanType === 'stock') {
+                const productIndex = referenceData.products.findIndex(
+                    p => p.product_code === scannedData
+                );
+
+                if (productIndex >= 0) {
+                    const product = referenceData.products[productIndex];
+                    if (product.stock < product.quantity) {
+                        product.stock += 1;
+                        referenceData.stock += 1;
+                    } else {
+                        Alert.alert('Info', 'All items for this product have already been scanned');
+                    }
+                } else {
+                    Alert.alert('Error', 'Scanned product not found in this order');
+                }
+            }
+
+            return newProgress;
+        });
+    };
+
+    const getScanButtonIcon = (reference, scanType) => {
+        const progress = scanProgress[reference];
+        if (!progress) return 'bulb-outline';
+
+        if (scanType === 'pick' || scanType === 'put') {
+            return progress[scanType] ? 'checkmark-circle' : 'barcode-outline';
+        } else {
+            const totalItems = progress.total;
+            const scannedItems = progress.stock || 0;
+
+            if (scannedItems >= totalItems) {
+                return 'checkmark-circle';
+            } else if (scannedItems > 0) {
+                return 'time-outline';
+            }
+            return 'bulb-outline';
+        }
+    };
+
+    const getScanButtonColor = (reference, scanType) => {
+        const progress = scanProgress[reference];
+        if (!progress) return Colors.theme;
+
+        if (scanType === 'pick' || scanType === 'put') {
+            return progress[scanType] ? Colors.success : Colors.theme;
+        } else {
+            const scannedItems = progress.stock || 0;
+            const totalItems = progress.total;
+
+            if (scannedItems >= totalItems) {
+                return Colors.success;
+            } else if (scannedItems > 0) {
+                return Colors.warning;
+            }
+            return Colors.theme;
+        }
     };
 
     const groupedData = data.reduce((acc, item) => {
@@ -86,18 +193,61 @@ const InternalScreen = ({ route }) => {
         }));
     };
 
-    const handleScannerPress = (reference) => {
-        navigation.navigate('ScannerScreen', { reference });
+    const handleScannerPress = (reference, scanType) => {
+        const orderGroup = groupedData[reference];
+        if (!orderGroup || orderGroup.length === 0) return;
+
+        const firstItem = orderGroup[0];
+        if (firstItem.state !== 'assigned') {
+            Alert.alert('Info', 'This order is not in scannable');
+            return;
+        }
+
+        const progress = scanProgress[reference];
+        if (progress) {
+            if (scanType === 'pick' || scanType === 'put') {
+                if (progress[scanType] === 1) {
+                    Alert.alert('Info', `${scanType.toUpperCase()} scan already completed`);
+                    return;
+                }
+            } else if (scanType === 'stock') {
+                if (progress.stock >= progress.total) {
+                    Alert.alert('Info', 'All items have already been scanned');
+                    return;
+                }
+            }
+        }
+
+        navigation.navigate('ScannerScreen', {
+            reference,
+            scanType,
+            expectedBarcode: scanType === 'pick' || scanType === 'put' ? firstItem.source_document : null,
+            onScanned: (ref, scannedBarcode, isGood) => handleScanComplete(ref, scannedBarcode, isGood, scanType)
+        });
     };
 
     const renderItem = ({ item }) => {
         const isExpanded = expandedReferences[item.reference];
+        const progress = scanProgress[item.reference] || {
+            pick: 0,
+            stock: 0,
+            put: 0,
+            total: 0
+        };
+
+        const isAssigned = item.state === 'assigned';
+
         return (
             <View style={styles.card}>
                 <TouchableOpacity onPress={() => toggleExpand(item.reference)} style={styles.header}>
-                    <Text style={styles.cardTitle}>Reference: {item.reference}</Text>
+                    <View>
+                        <Text style={styles.cardTitle}>Reference: {item.reference}</Text>
+                        <Text style={[styles.stateText, item.state === 'assigned' ? styles.assignedState : styles.doneState]}>
+                            {item.state.toUpperCase()}
+                        </Text>
+                    </View>
                     <Icon
-                        name={isExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                        name={isExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
                         size={wp('6%')}
                         color={Colors.darkGray}
                     />
@@ -105,41 +255,54 @@ const InternalScreen = ({ route }) => {
                 {isExpanded && (
                     <View style={styles.content}>
                         {/* Pick and Put Scanner Icons Section */}
-                        <View style={styles.scanIconsSection}>
-                            <TouchableOpacity
-                                style={styles.scanButton}
-                                onPress={() => handleScannerPress('Pick')}
-                            >
-                                <Icon
-                                    name="qr-code-scanner"
-                                    size={wp('6%')}
-                                    color={Colors.theme}
-                                />
-                                <Text style={styles.scanText}>Pick</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.scanButton}
-                                onPress={() => handleScannerPress('stock')}
-                            >
-                                <Icon
-                                    name="qr-code-scanner"
-                                    size={wp('6%')}
-                                    color={Colors.theme}
-                                />
-                                <Text style={styles.scanText}>stock</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.scanButton}
-                                onPress={() => handleScannerPress('Put')}
-                            >
-                                <Icon
-                                    name="qr-code-scanner"
-                                    size={wp('6%')}
-                                    color={Colors.theme}
-                                />
-                                <Text style={styles.scanText}>Put</Text>
-                            </TouchableOpacity>
-                        </View>
+                        {isAssigned && (
+                            <View style={styles.scanIconsSection}>
+                                <TouchableOpacity
+                                    style={styles.scanButton}
+                                    onPress={() => handleScannerPress(item.reference, 'pick')}
+                                >
+                                    <Icon
+                                        name={getScanButtonIcon(item.reference, 'pick')}
+                                        size={wp('6%')}
+                                        color={getScanButtonColor(item.reference, 'pick')}
+                                    />
+                                    <Text style={styles.scanText}>Pick</Text>
+                                    <Text style={styles.scanProgressText}>
+                                        {progress.pick}/1
+                                    </Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={styles.scanButton}
+                                    onPress={() => handleScannerPress(item.reference, 'stock')}
+                                >
+                                    <Icon
+                                        name={getScanButtonIcon(item.reference, 'stock')}
+                                        size={wp('6%')}
+                                        color={getScanButtonColor(item.reference, 'stock')}
+                                    />
+                                    <Text style={styles.scanText}>stock</Text>
+                                    <Text style={styles.scanProgressText}>
+                                        {progress.stock}/{progress.total}
+                                    </Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={styles.scanButton}
+                                    onPress={() => handleScannerPress(item.reference, 'put')}
+                                >
+                                    <Icon
+                                        name={getScanButtonIcon(item.reference, 'put')}
+                                        size={wp('6%')}
+                                        color={getScanButtonColor(item.reference, 'put')}
+                                    />
+                                    <Text style={styles.scanText}>Put</Text>
+                                    <Text style={styles.scanProgressText}>
+                                        {progress.put}/1
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
 
                         {/* Product Details Section */}
                         {groupedData[item.reference].map((product, index) => (
@@ -164,15 +327,30 @@ const InternalScreen = ({ route }) => {
                                         <Text style={styles.detailLabel}>Storage Facility</Text>
                                         <Text style={styles.detailValue}>{product.storagefacility}</Text>
                                     </View>
-                                    <View style={styles.detailColumn}>
-                                        <Text style={styles.detailLabel}>Scheduled Date</Text>
-                                        <Text style={styles.detailValue}>{product.scheduledDate}</Text>
-                                    </View>
-                                    <View style={styles.detailColumn}>
-                                        <Text style={styles.detailLabel}>Effective Date</Text>
-                                        <Text style={styles.detailValue}>{product.effectiveDate}</Text>
-                                    </View>
                                 </View>
+                                {scanProgress[item.reference]?.products[index] && (
+                                    <View style={styles.productScanStatus}>
+                                        <Text style={[
+                                            styles.scanStatusText,
+                                            progress.pick ? styles.scanStatusComplete : styles.scanStatusInProgress
+                                        ]}>
+                                            Pick: {progress.pick}/1
+                                        </Text>
+                                        <Text style={[
+                                            styles.scanStatusText,
+                                            scanProgress[item.reference].products[index].stock >= product.quantity ? 
+                                                styles.scanStatusComplete : styles.scanStatusInProgress
+                                        ]}>
+                                            stock: {scanProgress[item.reference].products[index].stock}/{product.quantity}
+                                        </Text>
+                                        <Text style={[
+                                            styles.scanStatusText,
+                                            progress.put ? styles.scanStatusComplete : styles.scanStatusInProgress
+                                        ]}>
+                                            Put: {progress.put}/1
+                                        </Text>
+                                    </View>
+                                )}
                             </View>
                         ))}
                     </View>
@@ -232,6 +410,17 @@ const styles = StyleSheet.create({
         paddingHorizontal: hp('2%'),
         paddingBottom: hp('2%'),
     },
+    stateText: {
+        fontSize: wp('3%'),
+        fontWeight: 'bold',
+        marginTop: hp('0.5%'),
+    },
+    assignedState: {
+        color: Colors.theme,
+    },
+    doneState: {
+        color: Colors.success,
+    },
     scanIconsSection: {
         flexDirection: 'row',
         justifyContent: 'center',
@@ -282,7 +471,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     detailColumn: {
-        width: '48%', // Two columns with a small gap
+        width: '48%',
         marginBottom: hp('1%'),
     },
     detailLabel: {
@@ -298,6 +487,29 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    scanProgressText: {
+        fontSize: wp('3%'),
+        color: Colors.darkGray,
+        marginTop: hp('0.5%'),
+    },
+    productScanStatus: {
+        marginTop: hp('1%'),
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+    },
+    scanStatusText: {
+        fontSize: wp('3%'),
+        color: Colors.darkGray,
+        marginRight: wp('2%'),
+    },
+    scanStatusComplete: {
+        color: Colors.success,
+        fontWeight: 'bold',
+    },
+    scanStatusInProgress: {
+        color: Colors.warning,
     },
 });
 

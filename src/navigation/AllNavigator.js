@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Image, View, Text } from 'react-native';
+import { Image, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 
 //Importing Navigators from React package
@@ -9,6 +9,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
 //Import Utils
 import { Colors } from "../utils/Color";
+import { Assets } from "../../assets/images/Assets";
+import { getHeaderOptions } from "../component/HeaderIcon";
 
 //Import Screens
 import LoginScreen from "../views/Login";
@@ -25,12 +27,14 @@ import SalesOrdersScreen from "../views/SalesOrders";
 import PickingScreen from "../views/Picking";
 import DeliveriesScreen from "../views/Deliveries";
 import InternalScreen from "../views/Internal";
-import { Assets } from "../../assets/images/Assets";
+import PackageDeliveryApp from "../views/Printlabel";
+import PlusButton from "../component/PlusButton";
 
 
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
+const EmptyScreen = () => null;
 
 const AuthNavigator = () => {
     return (
@@ -44,10 +48,23 @@ const AuthNavigator = () => {
     );
 };
 
-const TabNavigator = () => {
+const TabNavigator = ({ route }) => {
+    // Determine the initial tab based on itemID
+    const initialScreen = route.params?.initialScreen || 1;
+
+    const getInitialRouteName = (screen) => {
+        switch (screen) {
+            case 1: return 'ReceiptsTab';
+            case 2: return 'PutawayTab';
+            case 3: return 'PickingTab';
+            case 4: return 'DeliveryTab';
+            default: return 'ReceiptsTab';
+        }
+    };
+
     return (
         <Tab.Navigator
-            initialRouteName={'Home'}
+            initialRouteName={getInitialRouteName(initialScreen)} // Set initial tab based on itemID
             screenOptions={{
                 tabBarActiveTintColor: Colors.white,
                 tabBarStyle: {
@@ -55,45 +72,101 @@ const TabNavigator = () => {
                     backgroundColor: Colors.theme,
                     elevation: 20,
                 },
+                headerShown: false
             }}>
+
+            {/* Receipts Tab with nested stack */}
             <Tab.Screen
-                name={'Home'}
-                component={HomeScreen}
-                options={({ }) => ({
-                    tabBarLabel: 'Home',
-                    tabBarLabelStyle: {
-                        fontSize: 12,
-                    },
-                    tabBarHideOnKeyboard: true,
-                    tabBarIcon: ({ color, size }) => {
-                        return <Icon name={'home'} size={size} color={color} />;
-                    },
-                    headerStyle: { backgroundColor: Colors.theme },
-                    headerTintColor: Colors.white,
-                    headerTitleStyle: {
-                        fontWeight: 'normal', //Set Header text style
-                    },
+                name="ReceiptsTab"
+                options={{
+                    tabBarLabel: 'Receipts',
+                    tabBarIcon: ({ color, size }) => (
+                        <Image source={Assets.img_receipt} style={{ width: size, height: size, tintColor: color }} />
+                    ),
+                }}>
+                {() => (
+                    <Stack.Navigator>
+                        <Stack.Screen
+                            name="Receipts"
+                            component={ReceiptsScreen}
+                            options={({ navigation }) => getHeaderOptions(navigation)}
+                        />
+                    </Stack.Navigator>
+                )}
+            </Tab.Screen>
+
+            {/* Putaway Tab */}
+            <Tab.Screen
+                name="PutawayTab"
+                options={{
+                    tabBarLabel: 'Putaway',
+                    tabBarIcon: ({ color, size }) => (
+                        <Image source={Assets.img_putaway} style={{ width: size, height: size, tintColor: color }} />
+                    ),
+                }}>
+                {() => (
+                    <Stack.Navigator>
+                        <Stack.Screen
+                            name="Putaway"
+                            component={PutawayScreen}
+                            options={({ navigation }) => getHeaderOptions(navigation)}
+                        />
+                    </Stack.Navigator>
+                )}
+            </Tab.Screen>
+
+            {/* Custom add button */}
+            <Tab.Screen
+                name="PlusButton"
+                component={EmptyScreen}
+                options={({ navigation }) => ({
+                    tabBarButton: (props) => (
+                        <View style={{ top: -20 }}>
+                            <PlusButton navigation={navigation}/>
+                        </View>
+                    ),
                 })}
             />
+
+            {/* Picking Tab */}
             <Tab.Screen
-                name={'Profile'}
-                component={ProfileScreen}
-                options={({ }) => ({
-                    tabBarLabel: 'Profile',
-                    tabBarLabelStyle: {
-                        fontSize: 12,
-                    },
-                    tabBarHideOnKeyboard: true,
-                    tabBarIcon: ({ color, size }) => {
-                        return <Icon name={'account'} size={size} color={color} />;
-                    },
-                    headerStyle: { backgroundColor: Colors.theme },
-                    headerTintColor: Colors.white,
-                    headerTitleStyle: {
-                        fontWeight: 'normal', //Set Header text style
-                    },
-                })}
-            />
+                name="PickingTab"
+                options={{
+                    tabBarLabel: 'Picking',
+                    tabBarIcon: ({ color, size }) => (
+                        <Image source={Assets.img_picking} style={{ width: size, height: size, tintColor: color }} />
+                    ),
+                }}>
+                {() => (
+                    <Stack.Navigator>
+                        <Stack.Screen
+                            name="Picking"
+                            component={PickingScreen}
+                            options={({ navigation }) => getHeaderOptions(navigation)}
+                        />
+                    </Stack.Navigator>
+                )}
+            </Tab.Screen>
+
+            {/* Deliveries Tab */}
+            <Tab.Screen
+                name="DeliveryTab"
+                options={{
+                    tabBarLabel: 'Deliveries',
+                    tabBarIcon: ({ color, size }) => (
+                        <Image source={Assets.img_deliveries} style={{ width: size, height: size, tintColor: color }} />
+                    ),
+                }}>
+                {() => (
+                    <Stack.Navigator>
+                        <Stack.Screen
+                            name="Deliveries"
+                            component={DeliveriesScreen}
+                            options={({ navigation }) => getHeaderOptions(navigation)}
+                        />
+                    </Stack.Navigator>
+                )}
+            </Tab.Screen>
         </Tab.Navigator>
     );
 };
@@ -180,30 +253,34 @@ const AllNavigator = () => {
                 <Stack.Screen
                     name="ReceiptsScreen"
                     component={ReceiptsScreen}
-                    options={{
-                        title: 'Receipts',
-                        headerStyle: {
-                            backgroundColor: Colors.theme,
-                        },
+                    options={({ navigation }) => ({
+                        headerStyle: { backgroundColor: Colors.theme },
                         headerTintColor: Colors.white,
-                        headerTitleStyle: {
-                            fontWeight: '500',
-                        },
-                    }}
+                        headerRight: () => (
+                            <TouchableOpacity
+                                style={{ marginRight: 15 }}
+                                onPress={() => navigation.navigate('ProfileScreen')}
+                            >
+                                <Image source={Assets.img_man} style={style.HeaderProfile} />
+                            </TouchableOpacity>
+                        )
+                    })}
                 />
                 <Stack.Screen
                     name="PutawayScreen"
                     component={PutawayScreen}
-                    options={{
-                        title: 'Putaway',
-                        headerStyle: {
-                            backgroundColor: Colors.theme,
-                        },
+                    options={({ navigation }) => ({
+                        headerStyle: { backgroundColor: Colors.theme },
                         headerTintColor: Colors.white,
-                        headerTitleStyle: {
-                            fontWeight: '500',
-                        },
-                    }}
+                        headerRight: () => (
+                            <TouchableOpacity
+                                style={{ marginRight: 15 }}
+                                onPress={() => navigation.navigate('ProfileScreen')}
+                            >
+                                <Image source={Assets.img_man} style={style.HeaderProfile} />
+                            </TouchableOpacity>
+                        )
+                    })}
                 />
                 <Stack.Screen
                     name="SalesOrdersScreen"
@@ -222,30 +299,34 @@ const AllNavigator = () => {
                 <Stack.Screen
                     name="PickingScreen"
                     component={PickingScreen}
-                    options={{
-                        title: 'Picking',
-                        headerStyle: {
-                            backgroundColor: Colors.theme,
-                        },
+                    options={({ navigation }) => ({
+                        headerStyle: { backgroundColor: Colors.theme },
                         headerTintColor: Colors.white,
-                        headerTitleStyle: {
-                            fontWeight: '500',
-                        },
-                    }}
+                        headerRight: () => (
+                            <TouchableOpacity
+                                style={{ marginRight: 15 }}
+                                onPress={() => navigation.navigate('ProfileScreen')}
+                            >
+                                <Image source={Assets.img_man} style={style.HeaderProfile} />
+                            </TouchableOpacity>
+                        )
+                    })}
                 />
                 <Stack.Screen
                     name="DeliveriesScreen"
                     component={DeliveriesScreen}
-                    options={{
-                        title: 'Deliveries',
-                        headerStyle: {
-                            backgroundColor: Colors.theme,
-                        },
+                    options={({ navigation }) => ({
+                        headerStyle: { backgroundColor: Colors.theme },
                         headerTintColor: Colors.white,
-                        headerTitleStyle: {
-                            fontWeight: '500',
-                        },
-                    }}
+                        headerRight: () => (
+                            <TouchableOpacity
+                                style={{ marginRight: 15 }}
+                                onPress={() => navigation.navigate('ProfileScreen')}
+                            >
+                                <Image source={Assets.img_man} style={style.HeaderProfile} />
+                            </TouchableOpacity>
+                        )
+                    })}
                 />
                 <Stack.Screen
                     name="InternalScreen"
@@ -261,9 +342,52 @@ const AllNavigator = () => {
                         },
                     }}
                 />
+                <Stack.Screen
+                    name="ProfileScreen"
+                    component={ProfileScreen}
+                    options={{
+                        title: 'Profile',
+                        headerStyle: {
+                            backgroundColor: Colors.theme,
+                        },
+                        headerTintColor: Colors.white,
+                        headerTitleStyle: {
+                            fontWeight: '500',
+                        },
+                    }}
+                />
+                <Stack.Screen
+                    name="Home"
+                    component={HomeScreen}
+                    options={({ navigation }) => ({
+                        headerStyle: { backgroundColor: Colors.theme },
+                        headerTintColor: Colors.white,
+                        headerRight: () => (
+                            <TouchableOpacity
+                                style={{ marginRight: 15 }}
+                                onPress={() => navigation.navigate('ProfileScreen')}
+                            >
+                                <Image source={Assets.img_man} style={style.HeaderProfile} />
+                            </TouchableOpacity>
+                        )
+                    })}
+                />
+                <Stack.Screen
+                    name="Printlabel"
+                    component={PackageDeliveryApp}
+                />
             </Stack.Navigator>
         </NavigationContainer>
     );
 };
 
+const style = StyleSheet.create({
+    HeaderProfile: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: Colors.white
+    }
+})
 export default AllNavigator;

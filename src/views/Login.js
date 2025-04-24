@@ -27,7 +27,7 @@ const LoginScreen = ({ navigation }) => {
       try {
         const existingsession = await checkExistingSession();
         if (existingsession) {
-          navigation.navigate('TabNavigator');
+          navigation.navigate('Home');
         }
       } catch (error) {
         console.error('Session Check error:', error);
@@ -49,7 +49,7 @@ const LoginScreen = ({ navigation }) => {
       const result = await login(username, password);
       if (result?.key) {
         console.log('Logged in with key:', result.key);
-        navigation.navigate('TabNavigator');
+        navigation.navigate('Home');
       }else {
         throw new Error('Login failed - no session key received');
       }

@@ -11,7 +11,8 @@ import {
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { Colors } from '../utils/Color';
 import axios from 'axios';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+// import Icon from 'react-native-vector-icons/MaterialIcons';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { getDataUsingService } from '../services/Network';
 import { Services } from '../services/UrlConstant';
@@ -146,21 +147,21 @@ const ReceiptsScreen = ({ route }) => {
 
     const getScanButtonIcon = (reference, scanType) => {
         const progress = scanProgress[reference];
-        if (!progress) return 'lightbulb';
+        if (!progress) return 'bulb-outline';
 
         if (scanType === 'pick' || scanType === 'put') {
-            return progress[scanType] ? 'check-circle' : 'lightbulb';
+            return progress[scanType] ? 'checkmark-circle' : 'barcode-outline';
         } else {
             // For stock scan
             const totalItems = progress.total;
             const scannedItems = progress.stock || 0;
 
             if (scannedItems >= totalItems) {
-                return 'check-circle';
+                return 'checkmark-circle';
             } else if (scannedItems > 0) {
-                return 'hourglass-empty';
+                return 'time-outline';
             }
-            return 'lightbulb';
+            return 'bulb-outline';
         }
     };
 
@@ -253,7 +254,7 @@ const ReceiptsScreen = ({ route }) => {
                         </Text>
                     </View>
                     <Icon
-                        name={isExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                        name={isExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
                         size={wp('6%')}
                         color={Colors.darkGray}
                     />
@@ -287,7 +288,7 @@ const ReceiptsScreen = ({ route }) => {
                                         size={wp('6%')}
                                         color={getScanButtonColor(item.reference, 'stock')}
                                     />
-                                    <Text style={styles.scanText}>stock</Text>
+                                    <Text style={styles.scanText}>Stock</Text>
                                     <Text style={styles.scanProgressText}>
                                         {progress.stock}/{progress.total}
                                     </Text>
