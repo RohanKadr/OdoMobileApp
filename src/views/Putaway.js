@@ -12,7 +12,7 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { Colors } from '../utils/Color';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { getDataUsingService } from '../services/Network';
 import { Services } from '../services/UrlConstant';
 
@@ -21,12 +21,47 @@ const PutawayScreen = ({ route }) => {
     const [loading, setLoading] = useState(true);
     const [expandedReferences, setExpandedReferences] = useState({});
     const [scanProgress, setScanProgress] = useState({});
+    const [validateData, setValidateData] = useState({});
     const navigation = useNavigation();
 
-    useEffect(() => {
-        fetchData();
-    }, []);
+    // useEffect(() => {
+    //     fetchData();
+    // }, []);
 
+
+    useFocusEffect(
+        React.useCallback(() => {
+            setLoading(true);
+            fetchData();
+        }, [])
+    );
+
+    async function updateValidateData(update) {
+
+        try {
+            // update can be object or function(prev) => newState
+            const newData =
+                typeof update === 'function' ? update(validateData) : update;
+            setValidateData(newData); // update react state
+            // Save to AsyncStorage
+            await AsyncStorage.setItem('@validateData', JSON.stringify(newData));
+
+        } catch (e) {
+            console.error('Failed to update validateData', e);
+        }
+    }
+
+    console.log("validateData ---------> ", validateData);
+
+    async function handleSetInitial({ source_document }) {
+        await updateValidateData({
+            data: {
+                origin: source_document,
+                flag: 'Putaway',
+            },
+            itemScanned: 0,
+        });
+    }
     const fetchData = async () => {
         try {
             const response = await getDataUsingService(Services.putawayOrders);
@@ -105,7 +140,7 @@ const PutawayScreen = ({ route }) => {
             });
 
             if (scanType === 'pick' || scanType === 'put') {
-                if (scannedData && scannedData === referenceData.source_document) {
+                if (scannedData === referenceData.source_document) {
                     newProgress[reference][scanType] = 1;
                 } else {
                     Alert.alert('Error', 'Scanned document does not match the source document');
@@ -185,7 +220,8 @@ const PutawayScreen = ({ route }) => {
         }));
     };
 
-    const handleScannerPress = (reference, scanType) => {
+    const handleScannerPress = (reference, scanType, source_document) => {
+        handleSetInitial({ source_document })
         const orderGroup = groupedData[reference];
         if (!orderGroup || orderGroup.length === 0) return;
 
@@ -210,11 +246,63 @@ const PutawayScreen = ({ route }) => {
             }
         }
 
+
         navigation.navigate('ScannerScreen', {
             reference,
             scanType,
-            expectedBarcode: scanType === 'pick' || scanType === 'put' ? firstItem.source_document : null,
-            onScanned: (ref, scannedBarcode, isGood) => handleScanComplete(ref, scannedBarcode, isGood, scanType)
+            putawayId: firstItem.id, // 
+            validateState: 1,
+            validateJSON: {
+                data: {
+                    flag: "Putaway",
+                    origin: source_document
+                }
+            },
+            onScanned: (scannedBarcode, isGood) => handleScanComplete(reference, scannedBarcode, isGood, scanType)
+        });
+        console.log('Putaway ID being sent:', firstItem.id);
+    };
+
+    const handlePutScanPress = (reference,) => {
+                const orderGroup = groupedData[reference];
+                if (!orderGroup || orderGroup.length === 0) return;
+                const firstItem = orderGroup[0];
+        
+                if (firstItem.state !== 'assigned') {
+                    Alert.alert('Info', 'This order is not in scannable');
+                    return;
+                }
+        
+                const progress = scanProgress[reference];
+                if (progress.put === 1) {
+                    Alert.alert('Info', 'PUT scan already completed');
+                    return;
+                }
+        
+                navigation.navigate('ScannerScreen', {
+                    reference,
+                    scanType: 'Put',
+                    expectedBarcode: firstItem.source_document,
+                    validateState: 1,
+                    onScanned: (ref, scannedBarcode, isGood) => handleScanComplete(ref, scannedBarcode, isGood, 'put'),
+                });
+            };
+
+    const handleStockScanPress = (reference, process, counter, setCounter) => {
+
+        const orderGroup = groupedData[reference];
+        if (!orderGroup || orderGroup.length === 0) return;
+
+        const firstItem = orderGroup[0];
+        console.log("firstItem", firstItem)
+        navigation.navigate('ScannerScreen', {
+            // productCode,
+            origin: firstItem.source_document, // Pass the reference as origin
+            flag: 'Putaway', // Set the operation type
+            counter,
+            onCounterIncrement: (newCounter) => {
+                setCounter(newCounter)
+            }
         });
     };
 
@@ -229,6 +317,30 @@ const PutawayScreen = ({ route }) => {
 
         const isAssigned = item.state === 'assigned';
 
+        const stockQty = progress.products.reduce((accumulator, product) => {
+            return accumulator + product.stock;
+        }, 0);
+
+        // const [counter, setCounter] = useState(0);
+
+        let counter = 0;
+        console.log("item", item)
+
+
+        const handleClick = () => {
+            navigation.navigate('ScannerScreen', {
+                // productCode,
+                origin: item.source_document, // Pass the reference as origin
+                flag: 'Putaway', // Set the operation type
+                counter,
+                onCounterIncrement: (newCounter) => {
+                    // setCounter(newCounter)
+                    counter = newCounter;
+                }
+            });
+        }
+
+        console.log("counter", counter)
         return (
             <View style={styles.card}>
                 <TouchableOpacity onPress={() => toggleExpand(item.reference)} style={styles.header}>
@@ -266,7 +378,8 @@ const PutawayScreen = ({ route }) => {
 
                                 <TouchableOpacity
                                     style={styles.scanButton}
-                                    onPress={() => handleScannerPress(item.reference, 'stock')}
+                                    // onPress={() => handleStockScanPress(item.reference, 'stock',counter,setCounter)}
+                                    onPress={handleClick}
                                 >
                                     <Icon
                                         name={getScanButtonIcon(item.reference, 'stock')}
@@ -275,13 +388,13 @@ const PutawayScreen = ({ route }) => {
                                     />
                                     <Text style={styles.scanText}>Stock</Text>
                                     <Text style={styles.scanProgressText}>
-                                        {progress.stock}/{progress.total}
+                                        {counter}/{progress.total}
                                     </Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
                                     style={styles.scanButton}
-                                    onPress={() => handleScannerPress(item.reference, 'put')}
+                                    onPress={() => handleScannerPress(item.reference, 'Put', item.source_document)}
                                 >
                                     <Icon
                                         name={getScanButtonIcon(item.reference, 'put')}
@@ -315,12 +428,12 @@ const PutawayScreen = ({ route }) => {
                                         <Text style={styles.detailLabel}>Destination</Text>
                                         <Text style={styles.detailValue}>{product.Destination}</Text>
                                     </View>
-                                    <View style={styles.detailColumn}>
+                                    {/* <View style={styles.detailColumn}>
                                         <Text style={styles.detailLabel}>Storage Facility</Text>
                                         <Text style={styles.detailValue}>{product.storagefacility}</Text>
-                                    </View>
+                                    </View> */}
                                 </View>
-                                {scanProgress[item.reference]?.products[index] && (
+                                {/* {scanProgress[item.reference]?.products[index] && (
                                     <View style={styles.productScanStatus}>
                                         <Text style={[
                                             styles.scanStatusText,
@@ -330,7 +443,7 @@ const PutawayScreen = ({ route }) => {
                                         </Text>
                                         <Text style={[
                                             styles.scanStatusText,
-                                            scanProgress[item.reference].products[index].stock >= product.quantity ? 
+                                            scanProgress[item.reference].products[index].stock >= product.quantity ?
                                                 styles.scanStatusComplete : styles.scanStatusInProgress
                                         ]}>
                                             stock: {scanProgress[item.reference].products[index].stock}/{product.quantity}
@@ -342,7 +455,7 @@ const PutawayScreen = ({ route }) => {
                                             Put: {progress.put}/1
                                         </Text>
                                     </View>
-                                )}
+                                )} */}
                             </View>
                         ))}
                     </View>
@@ -366,6 +479,11 @@ const PutawayScreen = ({ route }) => {
                 keyExtractor={(item) => item}
                 renderItem={({ item }) => renderItem({ item: groupedData[item][0] })}
                 contentContainerStyle={styles.grid}
+                refreshing={loading}
+                onRefresh={() => {
+                    setLoading(true);
+                    fetchData();
+                }}
             />
         </View>
     );

@@ -11,7 +11,7 @@ import {
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { Colors } from '../utils/Color';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { getDataUsingService } from '../services/Network';
 import { Services } from '../services/UrlConstant';
 
@@ -25,6 +25,14 @@ const PickingScreen = ({ route }) => {
     useEffect(() => {
         fetchData();
     }, []);
+
+
+    useFocusEffect(
+        React.useCallback(() => {
+            setLoading(true);
+            fetchData();
+        }, [])
+    );
 
     const fetchData = async () => {
         try {
@@ -184,7 +192,7 @@ const PickingScreen = ({ route }) => {
         }));
     };
 
-    const handleScannerPress = (reference, scanType) => {
+    const handleScannerPress = (reference, scanType,source_document) => {
         const orderGroup = groupedData[reference];
         if (!orderGroup || orderGroup.length === 0) return;
 
@@ -212,8 +220,65 @@ const PickingScreen = ({ route }) => {
         navigation.navigate('ScannerScreen', {
             reference,
             scanType,
+            validateState: 1,
+            validateJSON: {
+                data: {
+                    flag: "Picking",
+                    origin: source_document
+                }
+            },
             expectedBarcode: scanType === 'pick' || scanType === 'put' ? firstItem.source_document : null,
             onScanned: (ref, scannedBarcode, isGood) => handleScanComplete(ref, scannedBarcode, isGood, scanType)
+        });
+    };
+
+    const handlePutScanPress = (reference,scanType, source_document) => {
+            const orderGroup = groupedData[reference];
+            if (!orderGroup || orderGroup.length === 0) return;
+            const firstItem = orderGroup[0];
+    
+            if (firstItem.state !== 'assigned') {
+                Alert.alert('Info', 'This order is not in scannable');
+                return;
+            }
+    
+            const progress = scanProgress[reference];
+            if (progress.put === 1) {
+                Alert.alert('Info', 'PUT scan already completed');
+                return;
+            }
+    
+            navigation.navigate('ScannerScreen', {
+                reference,
+                scanType: 'Put',
+                // expectedBarcode: firstItem.source_document,
+                validateState: 1,
+                validateJSON: {
+                    data: {
+                        flag: "Picking",
+                        origin: source_document
+                    }
+                },
+                onScanned: (ref, scannedBarcode, isGood) => handleScanComplete(ref, scannedBarcode, isGood, 'put'),
+            });
+        };
+
+    const handleStockScanPress = (reference, process, stockQty) => {
+
+        const orderGroup = groupedData[reference];
+        if (!orderGroup || orderGroup.length === 0) return;
+
+        const firstItem = orderGroup[0];
+        console.log("firstItem", firstItem)
+        navigation.navigate('ScannerScreen', {
+            // productCode,
+            origin: firstItem.source_document, // Pass the reference as origin
+            flag: 'Picking', // Set the operation type
+            onScanComplete: (response) => {
+                // Handle the response from the scan
+                fetchData();
+
+            },
         });
     };
 
@@ -265,7 +330,7 @@ const PickingScreen = ({ route }) => {
 
                                 <TouchableOpacity
                                     style={styles.scanButton}
-                                    onPress={() => handleScannerPress(item.reference, 'stock')}
+                                    onPress={() => handleStockScanPress(item.reference, 'stock',)}
                                 >
                                     <Icon
                                         name={getScanButtonIcon(item.reference, 'stock')}
@@ -280,7 +345,7 @@ const PickingScreen = ({ route }) => {
 
                                 <TouchableOpacity
                                     style={styles.scanButton}
-                                    onPress={() => handleScannerPress(item.reference, 'put')}
+                                    onPress={() => handlePutScanPress(item.reference, 'put',item.source_document)}
                                 >
                                     <Icon
                                         name={getScanButtonIcon(item.reference, 'put')}
@@ -314,12 +379,12 @@ const PickingScreen = ({ route }) => {
                                         <Text style={styles.detailLabel}>Destination</Text>
                                         <Text style={styles.detailValue}>{product.destination}</Text>
                                     </View>
-                                    <View style={styles.detailColumn}>
+                                    {/* <View style={styles.detailColumn}>
                                         <Text style={styles.detailLabel}>Storage Facility</Text>
                                         <Text style={styles.detailValue}>{product.storagefacility}</Text>
-                                    </View>
+                                    </View> */}
                                 </View>
-                                {scanProgress[item.reference]?.products[index] && (
+                                {/* {scanProgress[item.reference]?.products[index] && (
                                     <View style={styles.productScanStatus}>
                                         <Text style={[
                                             styles.scanStatusText,
@@ -329,7 +394,7 @@ const PickingScreen = ({ route }) => {
                                         </Text>
                                         <Text style={[
                                             styles.scanStatusText,
-                                            scanProgress[item.reference].products[index].stock >= product.quantity ? 
+                                            scanProgress[item.reference].products[index].stock >= product.quantity ?
                                                 styles.scanStatusComplete : styles.scanStatusInProgress
                                         ]}>
                                             stock: {scanProgress[item.reference].products[index].stock}/{product.quantity}
@@ -341,7 +406,7 @@ const PickingScreen = ({ route }) => {
                                             Put: {progress.put}/1
                                         </Text>
                                     </View>
-                                )}
+                                )} */}
                             </View>
                         ))}
                     </View>
@@ -365,6 +430,11 @@ const PickingScreen = ({ route }) => {
                 keyExtractor={(item) => item}
                 renderItem={({ item }) => renderItem({ item: groupedData[item][0] })}
                 contentContainerStyle={styles.grid}
+                refreshing={loading}
+                onRefresh={() => {
+                    setLoading(true);
+                    fetchData();
+                }}
             />
         </View>
     );

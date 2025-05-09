@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Colors } from '../utils/Color';
 
 const ManualEntryForm = ({ onComplete, onCancel, initialData }) => {
   const [formData, setFormData] = useState({
@@ -246,7 +247,7 @@ const ManualEntryForm = ({ onComplete, onCancel, initialData }) => {
       {/* Action Buttons */}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
-          <Text style={styles.buttonText}>Cancel</Text>
+          <Text style={styles.buttonText}>Scanner</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
@@ -343,13 +344,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#4CAF50',
+    backgroundColor: Colors.green,
     padding: 12,
     borderRadius: 6,
     marginTop: 10,
   },
   addButtonText: {
-    color: 'white',
+    color: Colors.white,
     marginLeft: 8,
     fontWeight: '500',
   },
@@ -361,7 +362,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 16,
-    backgroundColor: 'white',
+    backgroundColor: Colors.white,
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
   },
@@ -371,7 +372,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
     marginRight: 8,
-    backgroundColor: '#f44336',
+    backgroundColor: Colors.theme,
   },
   submitBtn: {
     flex: 1,
@@ -379,10 +380,10 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
     marginLeft: 8,
-    backgroundColor: '#4CAF50',
+    backgroundColor: Colors.green,
   },
   buttonText: {
-    color: 'white',
+    color: Colors.white,
     fontWeight: '500',
     fontSize: 15,
   },

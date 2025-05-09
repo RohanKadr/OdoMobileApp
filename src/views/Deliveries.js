@@ -11,7 +11,7 @@ import {
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { Colors } from '../utils/Color';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { getDataUsingService } from '../services/Network';
 import { Services } from '../services/UrlConstant';
 
@@ -25,6 +25,13 @@ const DeliveriesScreen = ({ route }) => {
     useEffect(() => {
         fetchData();
     }, []);
+
+    useFocusEffect(
+        React.useCallback(() => {
+            setLoading(true);
+            fetchData();
+        }, [])
+    );
 
     const fetchData = async () => {
         try {
@@ -96,20 +103,15 @@ const DeliveriesScreen = ({ route }) => {
 
             if (!referenceData) return prev;
 
-            console.log('Scan Completed:', {
-                reference,
-                scannedData,
-                scanType,
-                source_document: referenceData.source_document
-            });
-
-            if (scanType === 'pick' || scanType === 'put') {
+            if (scanType === 'pick') {
+                // For pick, we only scan the source_document once
                 if (scannedData && scannedData === referenceData.source_document) {
-                    newProgress[reference][scanType] = 1;
+                    newProgress[reference].pick = 1;
                 } else {
                     Alert.alert('Error', 'Scanned document does not match the source document');
                 }
             } else if (scanType === 'stock') {
+                // For stock, we scan individual products
                 const productIndex = referenceData.products.findIndex(
                     p => p.product_code === scannedData
                 );
@@ -135,9 +137,10 @@ const DeliveriesScreen = ({ route }) => {
         const progress = scanProgress[reference];
         if (!progress) return 'bulb-outline';
 
-        if (scanType === 'pick' || scanType === 'put') {
-            return progress[scanType] ? 'checkmark-circle' : 'barcode-outline';
+        if (scanType === 'pick') {
+            return progress.pick ? 'checkmark-circle' : 'barcode-outline';
         } else {
+            // For stock scan
             const totalItems = progress.total;
             const scannedItems = progress.stock || 0;
 
@@ -154,9 +157,10 @@ const DeliveriesScreen = ({ route }) => {
         const progress = scanProgress[reference];
         if (!progress) return Colors.theme;
 
-        if (scanType === 'pick' || scanType === 'put') {
-            return progress[scanType] ? Colors.success : Colors.theme;
+        if (scanType === 'pick') {
+            return progress.pick ? Colors.success : Colors.theme;
         } else {
+            // For stock scan
             const scannedItems = progress.stock || 0;
             const totalItems = progress.total;
 
@@ -184,7 +188,7 @@ const DeliveriesScreen = ({ route }) => {
         }));
     };
 
-    const handleScannerPress = (reference, scanType) => {
+    const handleScannerPress = (reference, scanType, source_document) => {
         const orderGroup = groupedData[reference];
         if (!orderGroup || orderGroup.length === 0) return;
 
@@ -196,9 +200,9 @@ const DeliveriesScreen = ({ route }) => {
 
         const progress = scanProgress[reference];
         if (progress) {
-            if (scanType === 'pick' || scanType === 'put') {
-                if (progress[scanType] === 1) {
-                    Alert.alert('Info', `${scanType.toUpperCase()} scan already completed`);
+            if (scanType === 'pick') {
+                if (progress.pick === 1) {
+                    Alert.alert('Info', 'PICK scan already completed');
                     return;
                 }
             } else if (scanType === 'stock') {
@@ -210,10 +214,8 @@ const DeliveriesScreen = ({ route }) => {
         }
 
         navigation.navigate('ScannerScreen', {
-            reference,
-            scanType,
-            expectedBarcode: scanType === 'pick' || scanType === 'put' ? firstItem.source_document : null,
-            onScanned: (ref, scannedBarcode, isGood) => handleScanComplete(ref, scannedBarcode, isGood, scanType)
+            origin: source_document, // Pass the reference as origin
+            flag: 'Delivery', // Set the operation type
         });
     };
 
@@ -265,31 +267,16 @@ const DeliveriesScreen = ({ route }) => {
 
                                 <TouchableOpacity
                                     style={styles.scanButton}
-                                    onPress={() => handleScannerPress(item.reference, 'stock')}
+                                    onPress={() => handleScannerPress(item.reference, 'stock', item.source_document)}
                                 >
                                     <Icon
                                         name={getScanButtonIcon(item.reference, 'stock')}
                                         size={wp('6%')}
                                         color={getScanButtonColor(item.reference, 'stock')}
                                     />
-                                    <Text style={styles.scanText}>stock</Text>
+                                    <Text style={styles.scanText}>Stock</Text>
                                     <Text style={styles.scanProgressText}>
                                         {progress.stock}/{progress.total}
-                                    </Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={styles.scanButton}
-                                    onPress={() => handleScannerPress(item.reference, 'put')}
-                                >
-                                    <Icon
-                                        name={getScanButtonIcon(item.reference, 'put')}
-                                        size={wp('6%')}
-                                        color={getScanButtonColor(item.reference, 'put')}
-                                    />
-                                    <Text style={styles.scanText}>Put</Text>
-                                    <Text style={styles.scanProgressText}>
-                                        {progress.put}/1
                                     </Text>
                                 </TouchableOpacity>
                             </View>
@@ -314,12 +301,12 @@ const DeliveriesScreen = ({ route }) => {
                                         <Text style={styles.detailLabel}>Destination</Text>
                                         <Text style={styles.detailValue}>{product.Destination}</Text>
                                     </View>
-                                    <View style={styles.detailColumn}>
+                                    {/* <View style={styles.detailColumn}>
                                         <Text style={styles.detailLabel}>Storage Facility</Text>
                                         <Text style={styles.detailValue}>{product.storagefacility}</Text>
-                                    </View>
+                                    </View> */}
                                 </View>
-                                {scanProgress[item.reference]?.products[index] && (
+                                {/* {scanProgress[item.reference]?.products[index] && (
                                     <View style={styles.productScanStatus}>
                                         <Text style={[
                                             styles.scanStatusText,
@@ -329,19 +316,13 @@ const DeliveriesScreen = ({ route }) => {
                                         </Text>
                                         <Text style={[
                                             styles.scanStatusText,
-                                            scanProgress[item.reference].products[index].stock >= product.quantity ? 
+                                            scanProgress[item.reference].products[index].stock >= product.quantity ?
                                                 styles.scanStatusComplete : styles.scanStatusInProgress
                                         ]}>
-                                            stock: {scanProgress[item.reference].products[index].stock}/{product.quantity}
-                                        </Text>
-                                        <Text style={[
-                                            styles.scanStatusText,
-                                            progress.put ? styles.scanStatusComplete : styles.scanStatusInProgress
-                                        ]}>
-                                            Put: {progress.put}/1
+                                            Stock: {scanProgress[item.reference].products[index].stock}/{product.quantity}
                                         </Text>
                                     </View>
-                                )}
+                                )} */}
                             </View>
                         ))}
                     </View>
@@ -365,6 +346,11 @@ const DeliveriesScreen = ({ route }) => {
                 keyExtractor={(item) => item}
                 renderItem={({ item }) => renderItem({ item: groupedData[item][0] })}
                 contentContainerStyle={styles.grid}
+                refreshing={loading}
+                onRefresh={() => {
+                    setLoading(true);
+                    fetchData();
+                }}
             />
         </View>
     );
@@ -427,7 +413,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: wp('2%'),
         backgroundColor: Colors.lightGray,
         marginHorizontal: wp('1%'),
-        width: wp('28%'),
+        width: wp('40%'),
     },
     scanText: {
         marginTop: hp('1%'),

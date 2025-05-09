@@ -62,9 +62,39 @@ const TabNavigator = ({ route }) => {
         }
     };
 
+    // Common header options for all tab screens
+    const getTabHeaderOptions = (navigation, title) => ({
+        headerLeft: () => (
+            <TouchableOpacity
+                onPress={() => navigation.navigate('Home')}
+                style={{ marginLeft: 15 }}
+            >
+                <Image source={Assets.img_logo} style={style.logo} />
+            </TouchableOpacity>
+        ),
+        headerTitle: () => (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={style.HeaderTab}>{title}</Text>
+            </View>
+        ),
+        headerTitleAlign: 'center',
+        headerStyle: {
+            backgroundColor: Colors.theme,
+        },
+        headerTintColor: Colors.white,
+        headerRight: () => (
+            <TouchableOpacity
+                style={{ marginRight: 15 }}
+                onPress={() => navigation.navigate('ProfileScreen')}
+            >
+                <Image source={Assets.img_man} style={style.HeaderProfile} />
+            </TouchableOpacity>
+        ),
+    });
+
     return (
         <Tab.Navigator
-            initialRouteName={getInitialRouteName(initialScreen)} // Set initial tab based on itemID
+            initialRouteName={getInitialRouteName(initialScreen)}
             screenOptions={{
                 tabBarActiveTintColor: Colors.white,
                 tabBarStyle: {
@@ -89,7 +119,7 @@ const TabNavigator = ({ route }) => {
                         <Stack.Screen
                             name="Receipts"
                             component={ReceiptsScreen}
-                            options={({ navigation }) => getHeaderOptions(navigation)}
+                            options={({ navigation }) => getTabHeaderOptions(navigation, 'Receipts')}
                         />
                     </Stack.Navigator>
                 )}
@@ -109,7 +139,7 @@ const TabNavigator = ({ route }) => {
                         <Stack.Screen
                             name="Putaway"
                             component={PutawayScreen}
-                            options={({ navigation }) => getHeaderOptions(navigation)}
+                            options={({ navigation }) => getTabHeaderOptions(navigation, 'Putaway')}
                         />
                     </Stack.Navigator>
                 )}
@@ -121,8 +151,8 @@ const TabNavigator = ({ route }) => {
                 component={EmptyScreen}
                 options={({ navigation }) => ({
                     tabBarButton: (props) => (
-                        <View style={{ top: -20 }}>
-                            <PlusButton navigation={navigation}/>
+                        <View style={{ top: 70 }}>
+                            <PlusButton navigation={navigation} />
                         </View>
                     ),
                 })}
@@ -142,7 +172,7 @@ const TabNavigator = ({ route }) => {
                         <Stack.Screen
                             name="Picking"
                             component={PickingScreen}
-                            options={({ navigation }) => getHeaderOptions(navigation)}
+                            options={({ navigation }) => getTabHeaderOptions(navigation, 'Picking')}
                         />
                     </Stack.Navigator>
                 )}
@@ -162,7 +192,7 @@ const TabNavigator = ({ route }) => {
                         <Stack.Screen
                             name="Deliveries"
                             component={DeliveriesScreen}
-                            options={({ navigation }) => getHeaderOptions(navigation)}
+                            options={({ navigation }) => getTabHeaderOptions(navigation, 'Deliveries')}
                         />
                     </Stack.Navigator>
                 )}
@@ -225,16 +255,42 @@ const AllNavigator = () => {
                 <Stack.Screen
                     name="ScannerScreen"
                     component={ScannerScreen}
-                    options={{
+                    options={({ navigation }) => ({
                         title: 'Scan', //Set Header Title
                         headerStyle: {
                             backgroundColor: Colors.theme, //Set Header color
                         },
                         headerTintColor: Colors.white, //Set Header text color
-                        headerTitleStyle: {
-                            fontWeight: '500', //Set Header text style
-                        },
-                    }}
+                        headerLeft: () => (
+                            <TouchableOpacity
+                                style={{ marginLeft: 15 }}
+                                onPress={() => navigation.goBack()}
+                            >
+                                <Icon
+                                    name="arrow-left"
+                                    size={24}
+                                    color={Colors.white}
+                                />
+                            </TouchableOpacity>
+                        ),
+                        headerTitle: () => (
+                            <TouchableOpacity
+                                style={{ marginRight: 15 }}
+                                onPress={() => navigation.navigate('Home')}
+                            >
+                                <Image source={Assets.img_logo} style={style.logo} />
+                            </TouchableOpacity>
+
+                        ),
+                        headerRight: () => (
+                            <TouchableOpacity
+                                style={{ marginRight: 15 }}
+                                onPress={() => navigation.navigate('ProfileScreen')}
+                            >
+                                <Image source={Assets.img_man} style={style.HeaderProfile} />
+                            </TouchableOpacity>
+                        )
+                    })}
                 />
                 <Stack.Screen
                     name="ASNScreen"
@@ -345,16 +401,42 @@ const AllNavigator = () => {
                 <Stack.Screen
                     name="ProfileScreen"
                     component={ProfileScreen}
-                    options={{
-                        title: 'Profile',
+                    options={({ navigation }) => ({
                         headerStyle: {
                             backgroundColor: Colors.theme,
                         },
                         headerTintColor: Colors.white,
-                        headerTitleStyle: {
-                            fontWeight: '500',
-                        },
-                    }}
+                        headerLeft: () => (
+                            <TouchableOpacity
+                                style={{ marginLeft: 15 }}
+                                onPress={() => navigation.navigate('Home')}
+                            >
+                                <Image source={Assets.img_logo} style={style.logo} />
+                            </TouchableOpacity>
+                        ),
+                        headerTitle: () => (
+                            <View style={{  alignItems: 'center' }}>
+                                <Text style={{
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: '500'
+                                }}>
+                                    Profile
+                                </Text>
+                            </View>
+                        ),
+                        headerRight: () => (
+                            <TouchableOpacity
+                                style={{ marginRight: 15 }}
+                                onPress={() => navigation.navigate('ProfileScreen')}
+                            >
+                                <Image
+                                    source={Assets.img_man}
+                                    style={style.HeaderProfile}
+                                />
+                            </TouchableOpacity>
+                        )
+                    })}
                 />
                 <Stack.Screen
                     name="Home"
@@ -362,6 +444,16 @@ const AllNavigator = () => {
                     options={({ navigation }) => ({
                         headerStyle: { backgroundColor: Colors.theme },
                         headerTintColor: Colors.white,
+                        headerLeft: () => null,
+                        headerTitle: () => (
+                            <TouchableOpacity
+                                style={{ marginRight: 15 }}
+                                onPress={() => navigation.navigate('Home')}
+                            >
+                                <Image source={Assets.img_logo} style={style.logo} /> // Your logo
+                            </TouchableOpacity>
+
+                        ),
                         headerRight: () => (
                             <TouchableOpacity
                                 style={{ marginRight: 15 }}
@@ -388,6 +480,18 @@ const style = StyleSheet.create({
         borderRadius: 16,
         borderWidth: 1,
         borderColor: Colors.white
+    },
+    logo: {
+        width: 110,
+        height: 20,
+    },
+    HeaderTab: {
+        fontWeight: '500',
+        color: Colors.white,
+        fontSize: 18,
+        includeFontPadding: false,
+        textAlignVertical: 'center',
+
     }
 })
 export default AllNavigator;
