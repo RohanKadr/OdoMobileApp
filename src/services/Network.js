@@ -122,4 +122,44 @@ export const postScanLoaction = async (service, payload, sessionId, userId, pers
             });
     });
 }
+export const postValidateProduct = async (service, payload, sessionId, userId, personalId) => {
+    return new Promise(async (resolve, reject) => {
+        console.log('BASE_URL==>', PATH.URL + service);
+        console.log('PAYLOAD ==>', payload);
+
+        const headers = { 'Content-Type': 'application/json' };
+        axios
+            .post(PATH.URL + service, payload, { headers })
+            .then(function (response) {
+                // handle success
+                console.log('RESPONSE ==>', response.data);
+                resolve(response.data);
+            })
+            .catch(function (error) {
+                // handle error
+                console.log('EXCEPTION ==>', error.message);
+                reject(error.message);
+            });
+    });
+}
+export const postScanProduct = async (service, payload, sessionId, userId, personalId) => {
+    return new Promise(async (resolve, reject) => {
+        console.log('BASE_URL==>', PATH.URL + service);
+        console.log('PAYLOAD ==>', payload);
+
+        const headers = { 'Content-Type': 'application/json' };
+        axios
+            .post(PATH.URL + service, payload, { headers })
+            .then(function (response) {
+                // handle success
+                console.log('RESPONSE ==>', response.data);
+                resolve(response.data);
+            })
+            .catch(function (error) {
+                // handle error
+                console.log('EXCEPTION ==>', error.message);
+                reject(error.message);
+            });
+    });
+}
 

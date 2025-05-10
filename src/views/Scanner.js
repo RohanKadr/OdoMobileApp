@@ -17,6 +17,8 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import ManualEntryForm from './ManualForm';
 import QualityCheckModal from '../component/QualityCheck';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Services } from '../services/UrlConstant';
+import { postScanProduct, postValidateProduct } from '../services/Network';
 
 const ScannerScreen = ({ route, navigation }) => {
   const { reference, onScanned, scanType, onScanComplete, validateState, counter, onCounterIncrement, validateJSON } = route.params || {};
@@ -31,7 +33,6 @@ const ScannerScreen = ({ route, navigation }) => {
   const [showManualForm, setShowManualForm] = useState(false);
   const [validateData, setValidateData] = useState({});
 
-  console.log("validatestate", validateData)
   async function updateValidateData(update) {
 
     try {
@@ -106,37 +107,39 @@ const ScannerScreen = ({ route, navigation }) => {
         barcode: scannedCode
       };
 
+      postScanProduct(Services.scanProduct, payload).then((response) => {
+        if (response) {
+          if (response?.result) {
+            if (response?.result?.message) {
+              Alert.alert(
+                'Scan Result',
+                response?.result?.message
+              );
 
-      console.log('Attempting API call with payload:', payload);
-      const response = await axios.post(
-        'http://192.168.0.120:8092/generic_wms/scan_productv2',
-        payload,
-        {
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
+            }
+            if (response?.result?.error) {
+              Alert.alert(
+                'Scan Result',
+                response?.result?.error
+              );
 
-      console.log("response      ", response)
-
-      if (response && response?.data) {
-        if (response?.data?.result) {
-          if (response?.data?.result?.message) {
-            Alert.alert(
-              'Scan Result',
-              response?.data?.result?.message
-            );
-
-          }
-          if (response?.data?.result?.error) {
-            Alert.alert(
-              'Scan Result',
-              response?.data?.result?.error
-            );
-
+            }
           }
         }
-      }
-      if (onScanComplete) onScanComplete(response);
+        navigation.goBack();
+      });
+      // const response = await axios.post(
+      //   'http://192.168.0.120:8092/generic_wms/scan_productv2',
+      //   payload,
+      //   {
+      //     headers: { 'Content-Type': 'application/json' }
+      //   }
+      // );
+
+      // console.log("response      ", response)
+
+
+      // if (onScanComplete) onScanComplete(response);
 
       // if (response?.data?.result?.delivery_id) {
       //   if (successSound.current) {
@@ -153,12 +156,11 @@ const ScannerScreen = ({ route, navigation }) => {
       //   throw new Error('Unexpected response from server');
       // }
 
-      const incrementedCounter = counter + 1;
-      if (onCounterIncrement) {
-        onCounterIncrement(incrementedCounter); // Pass the new counter back
-      }
+      // const incrementedCounter = counter + 1;
+      // if (onCounterIncrement) {
+      //   onCounterIncrement(incrementedCounter); // Pass the new counter back
+      // }
 
-      navigation.goBack();
     } catch (error) {
       console.log(error);
       if (failSound.current) {
@@ -172,48 +174,50 @@ const ScannerScreen = ({ route, navigation }) => {
 
   const validate = async () => {
     loadData();
-    console.log('validateData', validateJSON)
-    let response;
-    if(validateJSON){
-       response = await axios.post(
-        'http://192.168.0.120:8092/generic_wms/validate_product_v2',
-        validateJSON.data,
-        {
-          headers: { 'Content-Type': 'application/json' }
+
+    // postScanLoaction(Services.scanLocation, {
+    //   "origin": "P00013",
+    //   "flag": "Receipt",
+    //   "locations": {
+    //     "destination": "WHINPUT"
+    //   }
+    // })
+
+    // postScanLoaction(Services.scanLocation, payload).then
+
+    // if (validateJSON) {
+    //   response = postValidateProduct(Services.validateProduct, validateJSON.data).then((response) => {
+
+    //     console.log("responese data", response)
+    //   })
+    // } else {
+    //   response = postValidateProduct(Services.validateProduct, validateData.data)
+    // }
+
+    postValidateProduct(Services.validateProduct,
+      validateJSON ? validateJSON.data : validateData.data).then((response) => {
+        console.log(response)
+        if (response) {
+          if (response?.result) {
+            if (response?.result?.message) {
+              Alert.alert(
+                'Scan Result',
+                response?.result?.message
+              );
+
+            }
+            if (response?.result?.error) {
+              Alert.alert(
+                'Scan Result',
+                response?.result?.error
+              );
+
+            }
+          }
         }
-      );
-    }else{
-      const response = await axios.post(
-        'http://192.168.0.120:8092/generic_wms/validate_product_v2',
-        validateData.data,
-        {
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
-    }
-    
 
-    if (response && response?.data) {
-      if (response?.data?.result) {
-        if (response?.data?.result?.message) {
-          Alert.alert(
-            'Scan Result',
-            response?.data?.result?.message
-          );
-
-        }
-        if (response?.data?.result?.error) {
-          Alert.alert(
-            'Scan Result',
-            response?.data?.result?.error
-          );
-
-        }
-      }
-    }
-
-    navigation.goBack();
-
+        navigation.goBack();
+      })
   }
 
   const handleCancelScan = () => {

@@ -215,7 +215,7 @@ const DeliveriesScreen = ({ route }) => {
 
         navigation.navigate('ScannerScreen', {
             reference,
-            scanType: 'Put',
+            scanType: scanType,
             validateState: 1,
             validateJSON: {
                 data: {
