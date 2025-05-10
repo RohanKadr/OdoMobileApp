@@ -406,34 +406,21 @@ const AllNavigator = () => {
                             backgroundColor: Colors.theme,
                         },
                         headerTintColor: Colors.white,
-                        headerLeft: () => (
+                        headerLeft: () => null,
+                        headerTitle: () => (
                             <TouchableOpacity
-                                style={{ marginLeft: 15 }}
+                                style={{ marginRight: 15 }}
                                 onPress={() => navigation.navigate('Home')}
                             >
-                                <Image source={Assets.img_logo} style={style.logo} />
+                                <Image source={Assets.img_logo} style={style.logo} /> 
                             </TouchableOpacity>
-                        ),
-                        headerTitle: () => (
-                            <View style={{  alignItems: 'center' }}>
-                                <Text style={{
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: '500'
-                                }}>
-                                    Profile
-                                </Text>
-                            </View>
                         ),
                         headerRight: () => (
                             <TouchableOpacity
                                 style={{ marginRight: 15 }}
                                 onPress={() => navigation.navigate('ProfileScreen')}
                             >
-                                <Image
-                                    source={Assets.img_man}
-                                    style={style.HeaderProfile}
-                                />
+                                <Image source={Assets.img_man} style={style.HeaderProfile} />
                             </TouchableOpacity>
                         )
                     })}
@@ -450,9 +437,8 @@ const AllNavigator = () => {
                                 style={{ marginRight: 15 }}
                                 onPress={() => navigation.navigate('Home')}
                             >
-                                <Image source={Assets.img_logo} style={style.logo} /> // Your logo
+                                <Image source={Assets.img_logo} style={style.logo} /> 
                             </TouchableOpacity>
-
                         ),
                         headerRight: () => (
                             <TouchableOpacity

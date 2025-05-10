@@ -205,7 +205,7 @@ const DeliveriesScreen = ({ route }) => {
                     Alert.alert('Info', 'PICK scan already completed');
                     return;
                 }
-            } else if (scanType === 'stock') {
+            } else if (scanType === 'put') {
                 if (progress.stock >= progress.total) {
                     Alert.alert('Info', 'All items have already been scanned');
                     return;
@@ -214,8 +214,15 @@ const DeliveriesScreen = ({ route }) => {
         }
 
         navigation.navigate('ScannerScreen', {
-            origin: source_document, // Pass the reference as origin
-            flag: 'Delivery', // Set the operation type
+            reference,
+            scanType: 'Put',
+            validateState: 1,
+            validateJSON: {
+                data: {
+                    flag: "Delivery",
+                    origin: source_document
+                }
+            },
         });
     };
 
@@ -267,7 +274,7 @@ const DeliveriesScreen = ({ route }) => {
 
                                 <TouchableOpacity
                                     style={styles.scanButton}
-                                    onPress={() => handleScannerPress(item.reference, 'stock', item.source_document)}
+                                    onPress={() => handleScannerPress(item.reference, 'Put', item.source_document)}
                                 >
                                     <Icon
                                         name={getScanButtonIcon(item.reference, 'stock')}
