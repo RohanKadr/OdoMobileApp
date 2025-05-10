@@ -37,7 +37,7 @@ const LoginScreen = ({ navigation }) => {
   }, []);
 
   const handleLogin = async () => {
-    if(!username || !password) {
+    if (!username || !password) {
       Alert.alert('Error', 'Please enter both of the fields');
       return;
     }
@@ -50,69 +50,85 @@ const LoginScreen = ({ navigation }) => {
       if (result?.key) {
         console.log('Logged in with key:', result.key);
         navigation.navigate('Home');
-      }else {
+      } else {
         throw new Error('Login failed - no session key received');
       }
-    }catch (error) {
+    } catch (error) {
       Alert.alert('Login Failed', error.response?.data?.message || 'Invalid credentials');
       await AsyncStorage.removeItem('sessionKey');
-    } finally{
+    } finally {
       setLoading(false);
     }
   };
-  
-  
+
+
   return (
     <View style={styles.container}>
-      <Text style={styles.headerText}>{Strings.TXT_LOGIN_HEADER}</Text>
-      <View style={styles.card}>
-        <Icon name="account-circle" size={hp('10%')} color={Colors.white} style={styles.icon} />
-        <View style={styles.inputContainer}>
-          <Icon name="email-outline" size={hp('3%')} color={Colors.white} />
-          <TextInput
-            placeholder="Username"
-            placeholderTextColor={Colors.white}
-            style={styles.input}
-            value={username}
-            onChangeText={setUsername}
-            autoCapitalize='none'
-          />
-        </View>
-        <View style={styles.inputContainer}>
-          <Icon name="lock-outline" size={hp('3%')} color={Colors.white} />
-          <TextInput
-            placeholder="Password"
-            placeholderTextColor={Colors.white}
-            secureTextEntry={!passwordVisible}
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-          />
-          <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)}>
-            <Icon
-              name={passwordVisible ? 'eye-off' : 'eye'}
-              size={hp('3%')}
-              color={Colors.white}
+      <View style={styles.header}>
+        <Text style={styles.headerText}>{Strings.TXT_LOGIN_HEADER}</Text>
+      </View>
+
+      <View style={styles.body}>
+        <View style={styles.card}>
+          {/* <Icon name="account-circle" size={hp('10%')} color={Colors.white} style={styles.icon} /> */}
+          <View style={styles.inputContainer}>
+            <Icon name="email-outline" size={hp('3%')} color={Colors.black} />
+            <TextInput
+              placeholder="Username"
+              placeholderTextColor={Colors.black}
+              style={styles.input}
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize='none'
             />
+          </View>
+          <View style={styles.inputContainer}>
+            <Icon name="lock-outline" size={hp('3%')} color={Colors.black} />
+            <TextInput
+              placeholder="Password"
+              placeholderTextColor={Colors.black}
+              secureTextEntry={!passwordVisible}
+              style={styles.input}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)}>
+              <Icon
+                name={passwordVisible ? 'eye-off' : 'eye'}
+                size={hp('3%')}
+                color={Colors.black}
+              />
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+            <Text style={styles.loginButtonText}>{Strings.TXT_LOGIN}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Text style={styles.forgotText}>{Strings.TXT_FORGOT_PASSWORD}</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.loginButtonText}>{Strings.TXT_LOGIN}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Text style={styles.forgotText}>{Strings.TXT_FORGOT_PASSWORD}</Text>
-        </TouchableOpacity>
+        <Text style={styles.footerText}>
+          By Login you agree to the{' '}
+          <Text style={styles.linkText}>Terms & Conditions</Text> and{' '}
+          <Text style={styles.linkText}>Privacy Policy</Text>
+        </Text>
       </View>
-      <Text style={styles.footerText}>
-        By Login you agree to the{' '}
-        <Text style={styles.linkText}>Terms & Conditions</Text> and{' '}
-        <Text style={styles.linkText}>Privacy Policy</Text>
-      </Text>
+
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  header: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  body: {
+    width: '100%',
+    alignItems: 'center',
+    flex: 4,
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.white,
@@ -144,7 +160,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.gray,
+    backgroundColor: Colors.white,
     borderRadius: wp('2%'),
     marginBottom: hp('2%'),
     paddingHorizontal: wp('3%'),
@@ -153,7 +169,8 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: Colors.white,
+    color: Colors.black,
+    backgroundColor: Colors.white,
     fontSize: wp('4%'),
     marginLeft: wp('2%'),
   },
