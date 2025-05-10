@@ -52,33 +52,33 @@ export const getDataUsingService = (service) => {
 
 //login ...
 export const login = async (username, password) => {
-        console.log('BASE_URL==>', BASE_URL.dev + Services.login);
+    console.log('BASE_URL==>', BASE_URL.dev + Services.login);
 
-        const requestBody = {
-            "db": "generic_wms",
-            "login": username,
-            "password": password,
-          }
+    const requestBody = {
+        "db": "generic_wms_1",
+        "login": username,
+        "password": password,
+    }
 
-        try {
-            const response = await axios.post(BASE_URL.dev + Services.login, requestBody, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    timeout: 30000,
-                },
-            });
-            console.log('RESPONSE ==>', response.data);
+    try {
+        const response = await axios.post(BASE_URL.subharjitBhai + Services.login, requestBody, {
+            headers: {
+                'Content-Type': 'application/json',
+                timeout: 30000,
+            },
+        });
+        console.log('RESPONSE ==>', response.data);
 
-            if(response.data.result?.key) {
-                await AsyncStorage.setItem('sessionKey', response.data.result.key);
-                console.log('Session key stored');
-                return response.data.result;
-            }else {
-                throw new Error('Login failed: No session key received');
-            }
-        } catch (error) {
-            console.error('Error:', error);
+        if (response.data.result?.key) {
+            await AsyncStorage.setItem('sessionKey', response.data.result.key);
+            console.log('Session key stored');
+            return response.data.result;
+        } else {
+            throw new Error('Login failed: No session key received');
         }
+    } catch (error) {
+        console.error('Error:', error);
+    }
 };
 
 export const checkExistingSession = async () => {
@@ -101,3 +101,25 @@ export const logout = async () => {
         return false;
     }
 };
+
+export const postScanLoaction = async (service, payload, sessionId, userId, personalId) => {
+    return new Promise(async (resolve, reject) => {
+        console.log('BASE_URL==>', PATH.URL + service);
+        console.log('PAYLOAD ==>', payload);
+
+        const headers = { 'Content-Type': 'application/json' };
+        axios
+            .post(PATH.URL + service, payload, { headers })
+            .then(function (response) {
+                // handle success
+                console.log('RESPONSE ==>', response.data);
+                resolve(response.data);
+            })
+            .catch(function (error) {
+                // handle error
+                console.log('EXCEPTION ==>', error.message);
+                reject(error.message);
+            });
+    });
+}
+
