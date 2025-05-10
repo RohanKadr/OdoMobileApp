@@ -378,6 +378,7 @@ const ReceiptsScreen = ({ route }) => {
             // productCode,
             origin: progress.source_document, // Pass the reference as origin
             flag: 'Receipt', // Set the operation type
+            scanType: 'Stock',
             validateState: validateData.itemScanned,
             onScanComplete: (response) => {
                 // Handle the response from the scan
@@ -432,7 +433,7 @@ const ReceiptsScreen = ({ route }) => {
         });
     };
 
-    const handlePutScanPress = (reference, stockQty,source_document) => {
+    const handlePutScanPress = (reference, stockQty, source_document) => {
         const orderGroup = groupedData[reference];
         if (!orderGroup || orderGroup.length === 0) return;
         const firstItem = orderGroup[0];
