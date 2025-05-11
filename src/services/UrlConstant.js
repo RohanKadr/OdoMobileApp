@@ -11,7 +11,7 @@ const API_VERSION = {
 
 export const PATH = {
   // If you want to point UAT/DEV/PROD Env, just alter below URL variable
-  URL: BASE_URL.subharjitBhai + API_VERSION.api,
+  URL: BASE_URL.dev + API_VERSION.api,
 }
 
 export const Services = {
@@ -28,7 +28,10 @@ export const Services = {
   pickingOrders: 'picking_orders',
   deliveryOrders: 'delivery_orders',
 
+  //Others
   scanLocation: 'scan_location',
   validateProduct: 'validate_product_v2',
-  scanProduct: 'scan_productv2'
+  scanProduct: 'scan_productv2',
+  qualityCheck: 'qc_scan',
+  dummyOrder: 'dummy_order'
 };

@@ -55,13 +55,13 @@ export const login = async (username, password) => {
     console.log('BASE_URL==>', BASE_URL.dev + Services.login);
 
     const requestBody = {
-        "db": "generic_wms_1",
+        "db": "generic_wms",
         "login": username,
         "password": password,
     }
 
     try {
-        const response = await axios.post(BASE_URL.subharjitBhai + Services.login, requestBody, {
+        const response = await axios.post(BASE_URL.dev + Services.login, requestBody, {
             headers: {
                 'Content-Type': 'application/json',
                 timeout: 30000,
@@ -102,7 +102,7 @@ export const logout = async () => {
     }
 };
 
-export const postScanLoaction = async (service, payload, sessionId, userId, personalId) => {
+export const postScanLocation = async (service, payload, sessionId, userId, personalId) => {
     return new Promise(async (resolve, reject) => {
         console.log('BASE_URL==>', PATH.URL + service);
         console.log('PAYLOAD ==>', payload);
@@ -163,3 +163,44 @@ export const postScanProduct = async (service, payload, sessionId, userId, perso
     });
 }
 
+export const postQualityCheckProduct = async (service, payload) => {
+    return new Promise(async (resolve, reject) => {
+        console.log('BASE_URL==>', PATH.URL + service);
+        console.log('PAYLOAD ==>', payload);
+
+        const headers = { 'Content-Type': 'application/json' };
+        axios
+            .post(PATH.URL + service, payload, { headers })
+            .then(function (response) {
+                // handle success
+                console.log('RESPONSE ==>', response.data);
+                resolve(response.data);
+            })
+            .catch(function (error) {
+                // handle error
+                console.log('EXCEPTION ==>', error.message);
+                reject(error.message);
+            });
+    });
+}
+
+export const postDummyForm = async (service, payload, sessionId, userId, personalId) => {
+    return new Promise(async (resolve, reject) => {
+        console.log('BASE_URL==>', PATH.URL + service);
+        console.log('PAYLOAD ==>', payload);
+
+        const headers = { 'Content-Type': 'application/json' };
+        axios
+            .post(PATH.URL + service, payload, { headers })
+            .then(function (response) {
+                // handle success
+                console.log('RESPONSE ==>', response.data);
+                resolve(response.data);
+            })
+            .catch(function (error) {
+                // handle error
+                console.log('EXCEPTION ==>', error.message);
+                reject(error.message);
+            });
+    });
+}

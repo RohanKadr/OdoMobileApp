@@ -114,7 +114,7 @@ const TabNavigator = ({ route }) => {
                         <Image source={Assets.img_receipt} style={{ width: size, height: size, tintColor: color }} />
                     ),
                 }}>
-                {() => (
+                {({ navigation }) => (
                     <Stack.Navigator>
                         <Stack.Screen
                             name="Receipts"
@@ -134,7 +134,7 @@ const TabNavigator = ({ route }) => {
                         <Image source={Assets.img_putaway} style={{ width: size, height: size, tintColor: color }} />
                     ),
                 }}>
-                {() => (
+                {({ navigation }) => (
                     <Stack.Navigator>
                         <Stack.Screen
                             name="Putaway"
@@ -149,13 +149,16 @@ const TabNavigator = ({ route }) => {
             <Tab.Screen
                 name="PlusButton"
                 component={EmptyScreen}
-                options={({ navigation }) => ({
-                    tabBarButton: (props) => (
-                        <View style={{ top: 70 }}>
-                            <PlusButton navigation={navigation} />
-                        </View>
-                    ),
-                })}
+                options={({ navigation }) => {
+                    console.log('PlusButton navigation prop from Tab.Navigator:', navigation);
+                    return {
+                        tabBarButton: (props) => (
+                            <View style={{ top: 70 }}>
+                                <PlusButton navigation={navigation} />
+                            </View>
+                        ),
+                    };
+                }}
             />
 
             {/* Picking Tab */}
@@ -167,7 +170,7 @@ const TabNavigator = ({ route }) => {
                         <Image source={Assets.img_picking} style={{ width: size, height: size, tintColor: color }} />
                     ),
                 }}>
-                {() => (
+                {({ navigation }) => (
                     <Stack.Navigator>
                         <Stack.Screen
                             name="Picking"
@@ -187,7 +190,7 @@ const TabNavigator = ({ route }) => {
                         <Image source={Assets.img_deliveries} style={{ width: size, height: size, tintColor: color }} />
                     ),
                 }}>
-                {() => (
+                {({ navigation }) => (
                     <Stack.Navigator>
                         <Stack.Screen
                             name="Deliveries"
@@ -412,7 +415,7 @@ const AllNavigator = () => {
                                 style={{ marginRight: 15 }}
                                 onPress={() => navigation.navigate('Home')}
                             >
-                                <Image source={Assets.img_logo} style={style.logo} /> 
+                                <Image source={Assets.img_logo} style={style.logo} />
                             </TouchableOpacity>
                         ),
                         headerRight: () => (
@@ -437,7 +440,7 @@ const AllNavigator = () => {
                                 style={{ marginRight: 15 }}
                                 onPress={() => navigation.navigate('Home')}
                             >
-                                <Image source={Assets.img_logo} style={style.logo} /> 
+                                <Image source={Assets.img_logo} style={style.logo} />
                             </TouchableOpacity>
                         ),
                         headerRight: () => (

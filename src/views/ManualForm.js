@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Colors } from '../utils/Color';
 
 const ManualEntryForm = ({ onComplete, onCancel, initialData }) => {
+  const [showScheduledDatePicker, setShowScheduledDatePicker] = useState(false);
+  const [showEffectiveDatePicker, setShowEffectiveDatePicker] = useState(false);
   const [formData, setFormData] = useState({
     receiptNumber: initialData?.receiptNumber || 'VWH/IN/00001',
     receiveFrom: initialData?.receiveFrom || 'Godrej Interio',
@@ -16,13 +19,30 @@ const ManualEntryForm = ({ onComplete, onCancel, initialData }) => {
     availedStorageFacility: initialData?.availedStorageFacility || '',
     assignOwner: initialData?.assignOwner || '',
     products: initialData?.products || [{
-      packaging: '',
-      demand: '',
-      quantity: '',
+      product: '',
+      demand_qty: '',
+      done_qty: '',
       storageFacility: '',
-      unit: 'Units'
+      uom: 'Units'
     }]
   });
+
+  function formatDateTime(date) {
+    const pad = n => n < 10 ? '0' + n : n;
+    return date.getFullYear() + '-' +
+      pad(date.getMonth() + 1) + '-' +
+      pad(date.getDate()) + ' ' +
+      pad(date.getHours()) + ':' +
+      pad(date.getMinutes()) + ':' +
+      pad(date.getSeconds());
+  }
+
+  function formatDateOnly(date) {
+    if (!date) return '';
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+
 
   const handleInputChange = (field, value, index = null) => {
     if (index !== null) {
@@ -40,11 +60,11 @@ const ManualEntryForm = ({ onComplete, onCancel, initialData }) => {
       products: [
         ...formData.products,
         {
-          packaging: '',
-          demand: '',
-          quantity: '',
+          product: '',
+          demand_qty: '',
+          done_qty: '',
           storageFacility: '',
-          unit: 'Units'
+          uom: 'Units'
         }
       ]
     });
@@ -60,7 +80,7 @@ const ManualEntryForm = ({ onComplete, onCancel, initialData }) => {
 
   const handleSubmit = () => {
     for (const product of formData.products) {
-      if (!product.packaging || !product.demand || !product.quantity || !product.storageFacility) {
+      if (!product.product || !product.demand_qty || !product.done_qty || !product.storageFacility) {
         Alert.alert('Error', 'Please fill all product fields');
         return;
       }
@@ -86,7 +106,7 @@ const ManualEntryForm = ({ onComplete, onCancel, initialData }) => {
                 />
               </View>
               <View style={styles.gridItem}>
-                <Text style={styles.label}>Receive From</Text>
+                <Text style={styles.label}>Customer</Text>
                 <TextInput
                   style={styles.input}
                   value={formData.receiveFrom}
@@ -117,27 +137,69 @@ const ManualEntryForm = ({ onComplete, onCancel, initialData }) => {
             <View style={styles.gridRow}>
               <View style={styles.gridItem}>
                 <Text style={styles.label}>Scheduled Date</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="YYYY-MM-DD HH:MM:SS"
-                  value={formData.scheduledDate}
-                  onChangeText={(text) => handleInputChange('scheduledDate', text)}
-                />
+                <TouchableOpacity
+                  style={[styles.input, { justifyContent: 'center' }]}
+                  onPress={() => setShowScheduledDatePicker(true)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ color: formData.scheduledDate ? 'black' : '#aaa' }}>
+                    {formData.scheduledDate
+                      ? formatDateOnly(new Date(formData.scheduledDate))
+                      : ''}
+                  </Text>
+                </TouchableOpacity>
+                {showScheduledDatePicker && (
+                  <DateTimePicker
+                    value={formData.scheduledDate ? new Date(formData.scheduledDate) : new Date()}
+                    mode={'date'}
+                    display={'default'}
+                    onChange={(event, selectedDate) => {
+                      setShowScheduledDatePicker(false);
+                      if (selectedDate) {
+                        // Format as "YYYY-MM-DD HH:MM:SS"
+                        const formatted = formatDateTime(selectedDate);
+                        handleInputChange('scheduledDate', formatted);
+                      }
+                    }}
+                    style={{ width: 320, backgroundColor: "white", alignSelf: 'center', position: 'absolute', top: 8 }}
+                  />
+                )}
               </View>
+
               <View style={styles.gridItem}>
                 <Text style={styles.label}>Effective Date</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="YYYY-MM-DD HH:MM:SS"
-                  value={formData.effectiveDate}
-                  onChangeText={(text) => handleInputChange('effectiveDate', text)}
-                />
+                <TouchableOpacity
+                  style={[styles.input, { justifyContent: 'center' }]}
+                  onPress={() => setShowEffectiveDatePicker(true)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ color: formData.effectiveDate ? 'black' : '#aaa' }}>
+                    {formData.scheduledDate
+                      ? formatDateOnly(new Date(formData.scheduledDate))
+                      : ''}
+                  </Text>
+                </TouchableOpacity>
+                {showEffectiveDatePicker && (
+                  <DateTimePicker
+                    value={formData.effectiveDate ? new Date(formData.effectiveDate) : new Date()}
+                    mode={'date'}
+                    display={'default'}
+                    onChange={(event, selectedDate) => {
+                      setShowEffectiveDatePicker(false);
+                      if (selectedDate) {
+                        handleInputChange('effectiveDate', formatDateTime(selectedDate));
+                      }
+                    }}
+                    style={{ width: 320, backgroundColor: "white", alignSelf: 'center', position: 'absolute', top: 8 }}
+                  />
+                )}
               </View>
+
             </View>
 
             <View style={styles.gridRow}>
               <View style={styles.gridItem}>
-                <Text style={styles.label}>Source Document</Text>
+                <Text style={styles.label}>Origin</Text>
                 <TextInput
                   style={styles.input}
                   value={formData.sourceDocument}
@@ -148,6 +210,7 @@ const ManualEntryForm = ({ onComplete, onCancel, initialData }) => {
                 <Text style={styles.label}>Storage Facility</Text>
                 <TextInput
                   style={styles.input}
+                  keyboardType="numeric"
                   value={formData.storageFacility}
                   onChangeText={(text) => handleInputChange('storageFacility', text)}
                 />
@@ -159,6 +222,7 @@ const ManualEntryForm = ({ onComplete, onCancel, initialData }) => {
                 <Text style={styles.label}>Availed Storage</Text>
                 <TextInput
                   style={styles.input}
+                  keyboardType="numeric"
                   value={formData.availedStorageFacility}
                   onChangeText={(text) => handleInputChange('availedStorageFacility', text)}
                 />
@@ -193,36 +257,37 @@ const ManualEntryForm = ({ onComplete, onCancel, initialData }) => {
               <TextInput
                 style={[styles.productInput, { flex: 3 }]}
                 placeholder="Name/Code"
-                value={product.packaging}
-                onChangeText={(text) => handleInputChange('packaging', text, index)}
+                value={product.product}
+                onChangeText={(text) => handleInputChange('product', text, index)}
               />
 
               <TextInput
                 style={[styles.productInput, { flex: 2 }]}
                 placeholder="0"
                 keyboardType="numeric"
-                value={product.demand}
-                onChangeText={(text) => handleInputChange('demand', text, index)}
+                value={product.demand_qty}
+                onChangeText={(text) => handleInputChange('demand_qty', text, index)}
               />
 
               <TextInput
                 style={[styles.productInput, { flex: 2 }]}
                 placeholder="0"
                 keyboardType="numeric"
-                value={product.quantity}
-                onChangeText={(text) => handleInputChange('quantity', text, index)}
+                value={product.done_qty}
+                onChangeText={(text) => handleInputChange('done_qty', text, index)}
               />
 
               <TextInput
                 style={[styles.productInput, { flex: 2 }]}
                 placeholder="Location"
+                keyboardType="numeric"
                 value={product.storageFacility}
                 onChangeText={(text) => handleInputChange('storageFacility', text, index)}
               />
 
               <TextInput
                 style={[styles.productInput, { flex: 1 }]}
-                value={product.unit}
+                value={product.uom}
                 editable={false}
               />
 
@@ -247,7 +312,7 @@ const ManualEntryForm = ({ onComplete, onCancel, initialData }) => {
       {/* Action Buttons */}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
-          <Text style={styles.buttonText}>Scanner</Text>
+          <Text style={styles.buttonText}>Back</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
