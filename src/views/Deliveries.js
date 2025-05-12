@@ -71,25 +71,38 @@ const DeliveriesScreen = ({ route }) => {
         const transformedData = [];
         apiData.forEach(order => {
             order.products.forEach(product => {
-                transformedData.push({
-                    id: `${order.id}-${product.product_id}`,
-                    customer: order.deliver_to,
-                    product: product.product,
-                    quantity: product.quantity,
-                    reference: order.name,
-                    scheduledDate: order.scheduled_date,
-                    Destination: order.destination_location,
-                    storagefacility: product.storage_facility,
-                    effectiveDate: order.effective_date,
-                    product_code: product.product_code,
-                    state: order.state,
-                    source_document: order.source_document,
-                    source_location_scan: order.source_location_scan,
-                    destination_location_scan: order.destination_location_scan,
-                });
+                if (order.state === 'assigned') {
+                    transformedData.push({
+                        id: `${order.id}-${product.product_id}`,
+                        customer: order.deliver_to,
+                        product: product.product,
+                        quantity: product.quantity,
+                        reference: order.name,
+                        scheduledDate: order.scheduled_date,
+                        Destination: order.destination_location,
+                        storagefacility: product.storage_facility,
+                        effectiveDate: order.effective_date,
+                        product_code: product.product_code,
+                        state: order.state,
+                        source_document: order.source_document,
+                        source_location_scan: order.source_location_scan,
+                        destination_location_scan: order.destination_location_scan,
+                    });
+                }
             });
         });
-        return transformedData;
+
+        // ONLY TODAYS DATA
+        const today = new Date().toISOString().slice(0, 10);
+        const todaysData = transformedData.filter(item =>
+            item.scheduledDate && item.scheduledDate.startsWith(today)
+        );
+
+        // Sort descending by id
+        todaysData.sort((a, b) => b.id - a.id);
+        console.log('todaysData', todaysData)
+
+        return todaysData;
     };
 
     const handleScanComplete = (reference, scannedData, isGood, scanType) => {

@@ -14,20 +14,25 @@ import {
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { Colors } from '../utils/Color';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { getDataUsingService } from '../services/Network';
+import { getDataUsingService, postQualityCheckProduct } from '../services/Network';
 import { Services } from '../services/UrlConstant';
 import Icon from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import QualityCheckModal from '../component/QualityCheck';
 
 const ReceiptsScreen = ({ route }) => {
     const [data, setData] = useState([]);
+    const [payload, setpaylaod] = useState([]);
     const [loading, setLoading] = useState(false);
     const [expandedReferences, setExpandedReferences] = useState({});
     const [scanProgress, setScanProgress] = useState({});
     const [modalProducts, setModalProducts] = useState([]);
     const [modalReference, setModalReference] = useState(null);
     const [validateData, setValidateData] = useState({});
+    const [noOfScannedItems, setNoOfScannedItems] = useState(0);
+    const [isModalVisible, setisModalVisible] = useState(false);
+    const [qualityCheckResult, setQualityCheckResult] = useState(null);
     const navigation = useNavigation();
 
     // useEffect(() => {
@@ -112,23 +117,39 @@ const ReceiptsScreen = ({ route }) => {
         const transformedData = [];
         apiData.forEach(order => {
             order.products.forEach(product => {
-                transformedData.push({
-                    id: `${order.id}-${product.product_id}`,
-                    vendor: order.receive_from,
-                    product: product.product,
-                    quantity: product.quantity,
-                    reference: order.name,
-                    scheduledDate: order.scheduled_date,
-                    Destination: order.operation_type,
-                    demandquantity: product.demand_quantity,
-                    effectiveDate: order.effective_date,
-                    product_code: product.product_code,
-                    state: order.state,
-                    source_document: order.source_document,
-                });
+                if (order.state === 'assigned') {
+                    transformedData.push({
+                        id: order.id,
+                        vendor: order.receive_from,
+                        product: product.product,
+                        quantity: product.quantity,
+                        reference: order.name,
+                        scheduledDate: order.scheduled_date,
+                        Destination: order.operation_type,
+                        demandquantity: product.demand_quantity,
+                        effectiveDate: order.effective_date,
+                        product_code: product.product_code,
+                        state: order.state,
+                        source_document: order.source_document,
+                    });
+                }
+
             });
         });
-        return transformedData;
+        console.log("transformed data ", transformedData)
+
+
+        // ONLY TODAYS DATA
+        const today = new Date().toISOString().slice(0, 10);
+        const todaysData = transformedData.filter(item =>
+            item.scheduledDate && item.scheduledDate.startsWith(today)
+        );
+
+        // Sort descending by id
+        todaysData.sort((a, b) => b.id - a.id);
+        console.log('todaysData', todaysData)
+
+        return todaysData;
     };
 
     let index = 0;
@@ -385,9 +406,17 @@ const ReceiptsScreen = ({ route }) => {
                     origin: ""
                 }
             },
-            onScanComplete: (response) => {
+            onScanComplete: (payload) => {
+                // const payload = {
+                //     origin: payload.origin,
+                //     product_barcode: payload.barcode,
+                // };
+                // setpaylaod(payload);
+                // console.log("Payload: ---", payload);
+                setisModalVisible(true);
                 // Handle the response from the scan
                 fetchData();
+
                 // if (response && response.data) {
                 //     const { message } = response.data;
                 //     Alert.alert('Success', message);
@@ -437,6 +466,7 @@ const ReceiptsScreen = ({ route }) => {
             },
         });
     };
+
 
     const handlePutScanPress = (reference, stockQty, source_document) => {
         const orderGroup = groupedData[reference];
@@ -642,6 +672,23 @@ const ReceiptsScreen = ({ route }) => {
                 onRefresh={() => {
                     setLoading(true);
                     fetchData();
+                }}
+            />
+
+            <QualityCheckModal
+                visible={isModalVisible}
+                onClose={() => setisModalVisible(false)}
+                onQualityCheck={(result) => {
+                    setQualityCheckResult(result);
+                    setisModalVisible(false);
+                    if (result === 'good') {
+                        Alert.alert('Good', 'Good Product');
+                        console.log('Payload ---', payload);
+                        postQualityCheckProduct(Services.qualityCheck, payload);
+                    }
+                    if (result === 'bad') {
+                        Alert.alert('Bad', 'Bad Product');
+                    }
                 }}
             />
 
