@@ -51,7 +51,6 @@ const PutawayScreen = ({ route }) => {
         }
     }
 
-    console.log("validateData ---------> ", validateData);
 
     async function handleSetInitial({ source_document }) {
         await updateValidateData({
@@ -65,7 +64,6 @@ const PutawayScreen = ({ route }) => {
     const fetchData = async () => {
         try {
             const response = await getDataUsingService(Services.putawayOrders);
-            console.log("API Response:", response);
 
             const result = response;
             const transformedData = transformData(result.result);
@@ -83,9 +81,9 @@ const PutawayScreen = ({ route }) => {
                         product_id: product.product_id,
                         product_code: product.product_code,
                         quantity: product.quantity,
-                        stock: 0
+                        stock: product.new_quantity || 0,
                     })),
-                    source_document: order.source_document
+                    source_document: order.source_document,
                 };
             });
             setScanProgress(progress);
@@ -114,6 +112,8 @@ const PutawayScreen = ({ route }) => {
                     product_code: product.product_code,
                     state: order.state,
                     source_document: order.source_document,
+                    source_location_scan: order.source_location_scan,
+                    destination_location_scan: order.destination_location_scan,
                 });
             });
         });
@@ -132,14 +132,8 @@ const PutawayScreen = ({ route }) => {
 
             if (!referenceData) return prev;
 
-            console.log('Scan Completed:', {
-                reference,
-                scannedData,
-                scanType,
-                source_document: referenceData.source_document
-            });
 
-            if (scanType === 'pick' || scanType === 'put') {
+            if (scanType === 'Pick' || scanType === 'put') {
                 if (scannedData === referenceData.source_document) {
                     newProgress[reference][scanType] = 1;
                 } else {
@@ -167,30 +161,11 @@ const PutawayScreen = ({ route }) => {
         });
     };
 
-    const getScanButtonIcon = (reference, scanType) => {
-        const progress = scanProgress[reference];
-        if (!progress) return 'bulb-outline';
-
-        if (scanType === 'pick' || scanType === 'put') {
-            return progress[scanType] ? 'checkmark-circle' : 'barcode-outline';
-        } else {
-            const totalItems = progress.total;
-            const scannedItems = progress.stock || 0;
-
-            if (scannedItems >= totalItems) {
-                return 'checkmark-circle';
-            } else if (scannedItems > 0) {
-                return 'time-outline';
-            }
-            return 'bulb-outline';
-        }
-    };
-
     const getScanButtonColor = (reference, scanType) => {
         const progress = scanProgress[reference];
         if (!progress) return Colors.theme;
 
-        if (scanType === 'pick' || scanType === 'put') {
+        if (scanType === 'Pick' || scanType === 'put') {
             return progress[scanType] ? Colors.success : Colors.theme;
         } else {
             const scannedItems = progress.stock || 0;
@@ -220,7 +195,7 @@ const PutawayScreen = ({ route }) => {
         }));
     };
 
-    const handleScannerPress = (reference, scanType, source_document) => {
+    const handleScannerPress = (reference, scanType, source_document, stockQty) => {
         handleSetInitial({ source_document })
         const orderGroup = groupedData[reference];
         if (!orderGroup || orderGroup.length === 0) return;
@@ -233,7 +208,7 @@ const PutawayScreen = ({ route }) => {
 
         const progress = scanProgress[reference];
         if (progress) {
-            if (scanType === 'pick' || scanType === 'put') {
+            if (scanType === 'Pick' || scanType === 'put') {
                 if (progress[scanType] === 1) {
                     Alert.alert('Info', `${scanType.toUpperCase()} scan already completed`);
                     return;
@@ -246,12 +221,11 @@ const PutawayScreen = ({ route }) => {
             }
         }
 
-
         navigation.navigate('ScannerScreen', {
             reference,
             scanType,
             putawayId: firstItem.id, // 
-            validateState: 1,
+            validateState: stockQty,
             validateJSON: {
                 data: {
                     flag: "Putaway",
@@ -260,33 +234,32 @@ const PutawayScreen = ({ route }) => {
             },
             onScanned: (scannedBarcode, isGood) => handleScanComplete(reference, scannedBarcode, isGood, scanType)
         });
-        console.log('Putaway ID being sent:', firstItem.id);
     };
 
     const handlePutScanPress = (reference,) => {
-                const orderGroup = groupedData[reference];
-                if (!orderGroup || orderGroup.length === 0) return;
-                const firstItem = orderGroup[0];
-        
-                if (firstItem.state !== 'assigned') {
-                    Alert.alert('Info', 'This order is not in scannable');
-                    return;
-                }
-        
-                const progress = scanProgress[reference];
-                if (progress.put === 1) {
-                    Alert.alert('Info', 'PUT scan already completed');
-                    return;
-                }
-        
-                navigation.navigate('ScannerScreen', {
-                    reference,
-                    scanType: 'Put',
-                    expectedBarcode: firstItem.source_document,
-                    validateState: 1,
-                    onScanned: (ref, scannedBarcode, isGood) => handleScanComplete(ref, scannedBarcode, isGood, 'put'),
-                });
-            };
+        const orderGroup = groupedData[reference];
+        if (!orderGroup || orderGroup.length === 0) return;
+        const firstItem = orderGroup[0];
+
+        if (firstItem.state !== 'assigned') {
+            Alert.alert('Info', 'This order is not in scannable');
+            return;
+        }
+
+        const progress = scanProgress[reference];
+        if (progress.put === 1) {
+            Alert.alert('Info', 'PUT scan already completed');
+            return;
+        }
+
+        navigation.navigate('ScannerScreen', {
+            reference,
+            scanType: 'Put',
+            expectedBarcode: firstItem.source_document,
+            validateState: 1,
+            onScanned: (ref, scannedBarcode, isGood) => handleScanComplete(ref, scannedBarcode, isGood, 'put'),
+        });
+    };
 
     const handleStockScanPress = (reference, process, counter, setCounter) => {
 
@@ -294,7 +267,6 @@ const PutawayScreen = ({ route }) => {
         if (!orderGroup || orderGroup.length === 0) return;
 
         const firstItem = orderGroup[0];
-        console.log("firstItem", firstItem)
         navigation.navigate('ScannerScreen', {
             // productCode,
             origin: firstItem.source_document, // Pass the reference as origin
@@ -324,23 +296,22 @@ const PutawayScreen = ({ route }) => {
         // const [counter, setCounter] = useState(0);
 
         let counter = 0;
-        console.log("item", item)
 
 
-        const handleClick = () => {
+        const handleClick = (source_document) => {
             navigation.navigate('ScannerScreen', {
-                // productCode,
-                origin: item.source_document, // Pass the reference as origin
-                flag: 'Putaway', // Set the operation type
-                counter,
-                onCounterIncrement: (newCounter) => {
-                    // setCounter(newCounter)
-                    counter = newCounter;
+                origin: source_document,
+                flag: 'Putaway',
+                scanType: 'Stock',
+                validateJSON: {
+                    data: {
+                        flag: "Putaway",
+                        origin: source_document
+                    }
                 }
             });
         }
 
-        console.log("counter", counter)
         return (
             <View style={styles.card}>
                 <TouchableOpacity onPress={() => toggleExpand(item.reference)} style={styles.header}>
@@ -363,48 +334,43 @@ const PutawayScreen = ({ route }) => {
                             <View style={styles.scanIconsSection}>
                                 <TouchableOpacity
                                     style={styles.scanButton}
-                                    onPress={() => handleScannerPress(item.reference, 'pick')}
+                                    onPress={() => handleScannerPress(item.reference, 'Pick', item.source_document)}
+                                    disabled={item.source_location_scan}
                                 >
                                     <Icon
-                                        name={getScanButtonIcon(item.reference, 'pick')}
+                                        name={item.source_location_scan ? 'checkmark-circle' : 'barcode-outline'}
                                         size={wp('6%')}
-                                        color={getScanButtonColor(item.reference, 'pick')}
+                                        color={Colors.theme}
                                     />
                                     <Text style={styles.scanText}>Pick</Text>
-                                    <Text style={styles.scanProgressText}>
-                                        {progress.pick}/1
-                                    </Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
                                     style={styles.scanButton}
-                                    // onPress={() => handleStockScanPress(item.reference, 'stock',counter,setCounter)}
-                                    onPress={handleClick}
+                                    onPress={() => { handleClick(item.source_document) }}
+                                    disabled={stockQty >= progress.total}
                                 >
                                     <Icon
-                                        name={getScanButtonIcon(item.reference, 'stock')}
+                                        name={stockQty >= progress.total ? 'checkmark-circle' : 'bulb-outline'}
                                         size={wp('6%')}
-                                        color={getScanButtonColor(item.reference, 'stock')}
+                                        color={Colors.theme}
                                     />
                                     <Text style={styles.scanText}>Stock</Text>
                                     <Text style={styles.scanProgressText}>
-                                        {counter}/{progress.total}
+                                        {stockQty}/{progress.total}
                                     </Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
                                     style={styles.scanButton}
-                                    onPress={() => handleScannerPress(item.reference, 'Put', item.source_document)}
+                                    onPress={() => handleScannerPress(item.reference, 'Put', item.source_document, stockQty)}
                                 >
                                     <Icon
-                                        name={getScanButtonIcon(item.reference, 'put')}
+                                        name={item.destination_location_scan ? 'checkmark-circle' : 'barcode-outline'}
                                         size={wp('6%')}
-                                        color={getScanButtonColor(item.reference, 'put')}
+                                        color={Colors.theme}
                                     />
                                     <Text style={styles.scanText}>Put</Text>
-                                    <Text style={styles.scanProgressText}>
-                                        {progress.put}/1
-                                    </Text>
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -539,7 +505,7 @@ const styles = StyleSheet.create({
         marginBottom: hp('1%'),
     },
     scanButton: {
-        justifyContent: 'center',
+        justifyContent: 'top',
         alignItems: 'center',
         borderRadius: wp('2%'),
         paddingVertical: wp('3%'),

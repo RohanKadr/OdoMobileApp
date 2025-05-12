@@ -18,10 +18,11 @@ import ManualEntryForm from './ManualForm';
 import QualityCheckModal from '../component/QualityCheck';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Services } from '../services/UrlConstant';
-import { postScanProduct, postValidateProduct } from '../services/Network';
+import { postScanLocation, postScanProduct, postValidateProduct } from '../services/Network';
 
 const ScannerScreen = ({ route, navigation }) => {
   const { reference, onScanned, scanType, onScanComplete, validateState, counter, onCounterIncrement, validateJSON } = route.params || {};
+  const [stockQty, setStockQty] = useState(validateState || 0)
   const [isFailAlertVisible, setFailAlertVisible] = useState(false);
   const [scannerVisible, setScannerVisible] = useState(true);
   const [failMessage, setFailMessage] = useState('');
@@ -32,7 +33,8 @@ const ScannerScreen = ({ route, navigation }) => {
   const [productStatus, setProductStatus] = useState(null);
   const [showManualForm, setShowManualForm] = useState(false);
   const [validateData, setValidateData] = useState({});
-
+  const [locScanStatus, setLocScanStatus] = useState(false);
+  const [scanBarcode, setScanBarcode] = useState(true);
   async function updateValidateData(update) {
 
     try {
@@ -93,17 +95,17 @@ const ScannerScreen = ({ route, navigation }) => {
     };
   }, []);
 
-  const validateScannedOrderNo = async (scannedCode) => {
+
+  const scanStock = (scannedCode) => {
     console.log('Starting scan validation...');
     setScannedValue(scannedCode);
     setScannerVisible(false);
 
     try {
       const sourceDocument = route.params.origin || '';
-      const type = route.params.flag || '';
       const payload = {
         origin: sourceDocument,
-        flag: type, // Fixed as per your requirement
+        flag: validateJSON.data.flag, // Fixed as per your requirement
         barcode: scannedCode
       };
 
@@ -111,6 +113,11 @@ const ScannerScreen = ({ route, navigation }) => {
         if (response) {
           if (response?.result) {
             if (response?.result?.message) {
+              if (validateJSON?.data?.flag === 'Delivery') {
+                console.log("here ----", response?.result?.new_quantity)
+                setStockQty(response?.result?.new_quantity)
+                setLocScanStatus(true);
+              }
               Alert.alert(
                 'Scan Result',
                 response?.result?.message
@@ -126,7 +133,8 @@ const ScannerScreen = ({ route, navigation }) => {
             }
           }
         }
-        navigation.goBack();
+        if (validateJSON.data.flag != 'Delivery') //navigation will go back for Receipt, Putaway & Picking
+          navigation.goBack();
       });
       // const response = await axios.post(
       //   'http://192.168.0.120:8092/generic_wms/scan_productv2',
@@ -170,30 +178,39 @@ const ScannerScreen = ({ route, navigation }) => {
       setFailAlertVisible(true);
       setTimeout(() => setScannerVisible(true), 2000);
     }
+  }
+
+  const scanPut = async (scannedCode, module, scanType) => {
+    if (module === 'Receipt' || module === 'Putaway' || module === 'Picking')
+      locationScan(null, scannedCode)
+  }
+
+  const scanPick = async (scannedCode, module, scanType) => {
+    let scanStatus = false;
+
+    if (module === 'Putaway' || module === 'Picking' || module === 'Delivery') {
+      scanStatus = await locationScan(scannedCode, null);
+    }
+
+    if (scanStatus === true) {
+      navigation.goBack();
+    }
+  };
+
+
+  const validateScannedOrderNo = async (scannedCode) => {
+    if (scanType === 'Stock') {
+      scanStock(scannedCode);
+    } else if (scanType === 'Put') {
+      scanPut(scannedCode, validateJSON.data.flag, scanType);
+    } else if (scanType === 'Pick') {
+      setScanBarcode(false);
+      scanPick(scannedCode, validateJSON.data.flag, scanType)
+    }
   };
 
   const validate = async () => {
     loadData();
-
-    // postScanLoaction(Services.scanLocation, {
-    //   "origin": "P00013",
-    //   "flag": "Receipt",
-    //   "locations": {
-    //     "destination": "WHINPUT"
-    //   }
-    // })
-
-    // postScanLoaction(Services.scanLocation, payload).then
-
-    // if (validateJSON) {
-    //   response = postValidateProduct(Services.validateProduct, validateJSON.data).then((response) => {
-
-    //     console.log("responese data", response)
-    //   })
-    // } else {
-    //   response = postValidateProduct(Services.validateProduct, validateData.data)
-    // }
-
     postValidateProduct(Services.validateProduct,
       validateJSON ? validateJSON.data : validateData.data).then((response) => {
         console.log(response)
@@ -215,7 +232,6 @@ const ScannerScreen = ({ route, navigation }) => {
             }
           }
         }
-
         navigation.goBack();
       })
   }
@@ -229,6 +245,33 @@ const ScannerScreen = ({ route, navigation }) => {
     console.log('Form submitted:', formData);
     navigation.goBack();
   };
+
+  const locationScan = async (originCode = null, destCode = null) => {
+    const payload = {
+      origin: validateJSON?.data?.origin || '',
+      flag: validateJSON?.data?.flag || '',
+      locations: {
+        ...(originCode && { source: originCode }),
+        ...(destCode && { destination: destCode })
+      }
+    };
+
+    try {
+      const response = await postScanLocation(Services.scanLocation, payload);
+
+      if (response?.result?.error) {
+        Alert.alert('Scan Result', 'Location barcode not found');
+        return false;
+      } else {
+        setLocScanStatus(true);
+        return true;
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Scan failed: ' + error);
+      return false;
+    }
+  };
+
 
   return (
     <View style={styles.container}>
@@ -251,45 +294,96 @@ const ScannerScreen = ({ route, navigation }) => {
           <Camera
             style={styles.camera}
             cameraType="back"
-            scanBarcode={true}
-            onReadCode={(event) => validateScannedOrderNo(event.nativeEvent.codeStringValue)}
+            scanBarcode={scanBarcode}
+            onReadCode={(event) => scanBarcode && validateScannedOrderNo(event.nativeEvent.codeStringValue)}
             showFrame={true}
             laserColor={Colors.theme}
             frameColor={Colors.accent}
           />
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.cancelButton} onPress={handleCancelScan}>
+            {/* <TouchableOpacity style={styles.cancelButton} onPress={handleCancelScan}>
               <Icon name="add" size={24} color="white" />
               <Text style={styles.cancelButtonText}>Create</Text>
-            </TouchableOpacity>
-            {scanType === 'Put' && (
-              <TouchableOpacity
-                style={styles.modalValidateButton}
-                onPress={() => validate()}
-                disabled={validateState > 0 ? false : true}
+            </TouchableOpacity> */}
+            {(scanType === 'Put' || (scanType === 'Stock' && validateJSON?.data?.flag === 'Delivery')) &&
+              (<TouchableOpacity
+                style={[
+                  styles.modalValidateButton,
+                  !(stockQty > 0 && locScanStatus) && styles.modalValidateButtonDisabled
+                ]}
+                onPress={() => {
+                  if (!(stockQty > 0 && locScanStatus)) {
+                    if (stockQty <= 0) {
+                      Alert.alert('Validation Error', 'Stock quantity must be greater than zero.');
+                    } else if (!locScanStatus) {
+                      Alert.alert('Validation Error', 'Please scan the location before proceeding.');
+                    } else {
+                      Alert.alert('Validation Error', 'Validation conditions are not met.');
+                    }
+                    return;
+                  }
+                  validate(); // Call actual validation function
+                }}
+              // disabled={!(stockQty > 0 && locScanStatus)}
               >
                 <Text style={styles.modalCloseText}>Validate</Text>
               </TouchableOpacity>
-            )}
+
+              )}
           </View>
         </View>
       ) : (
-        <View style={styles.scannedResult}>
-          <Icon
-            name={productStatus === 'good' ? 'check-circle' : 'error'}
-            size={wp('20%')}
-            color={productStatus === 'good' ? Colors.success : Colors.error}
-          />
-          <Text style={styles.scannedText}>
-            PRODUCT SCANNED
-          </Text>
-          <Text style={styles.scannedValue}>{scannedValue}</Text>
-          <Text style={[
-            styles.statusText,
-            { color: productStatus === 'good' ? Colors.success : Colors.error }
-          ]}>
-            {productStatus === 'good' ? 'VERIFIED' : 'DEFECTIVE'}
-          </Text>
+        <View style={styles.scannerView}>
+          <View style={styles.scannerViewResult}>
+            <Icon
+              name={productStatus === 'good' ? 'check-circle' : 'error'}
+              size={wp('20%')}
+              color={productStatus === 'good' ? Colors.success : Colors.error}
+            />
+            <Text style={styles.scannedText}>
+              PRODUCT SCANNED
+            </Text>
+            <Text style={styles.scannedValue}>{scannedValue}</Text>
+            <Text style={[
+              styles.statusText,
+              { color: productStatus === 'good' ? Colors.success : Colors.error }
+            ]}>
+              {productStatus === 'good' ? 'VERIFIED' : 'DEFECTIVE'}
+            </Text>
+          </View>
+          <View style={styles.buttonContainer}>
+            {/* <TouchableOpacity style={styles.cancelButton} onPress={handleCancelScan}>
+              <Icon name="add" size={24} color="white" />
+              <Text style={styles.cancelButtonText}>Create</Text>
+            </TouchableOpacity> */}
+            {scanType === 'Put' ||
+              (scanType === 'Stock' && validateJSON?.data?.flag === 'Delivery') &&
+              (
+                <TouchableOpacity
+                  style={[
+                    styles.modalValidateButton,
+                    !(stockQty > 0 && locScanStatus) && styles.modalValidateButtonDisabled
+                  ]}
+                  onPress={() => {
+                    if (!(stockQty > 0 && locScanStatus)) {
+                      if (stockQty <= 0) {
+                        Alert.alert('Validation Error', 'Stock quantity must be greater than zero.');
+                      } else if (!locScanStatus) {
+                        Alert.alert('Validation Error', 'Please scan the location before proceeding.');
+                      } else {
+                        Alert.alert('Validation Error', 'Validation conditions are not met.');
+                      }
+                      return;
+                    }
+                    validate(); // Call actual validation function
+                  }}
+                // disabled={!(stockQty > 0 && locScanStatus)}
+                >
+                  <Text style={styles.modalCloseText}>Validate</Text>
+                </TouchableOpacity>
+
+              )}
+          </View>
         </View>
       )}
 
@@ -352,6 +446,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  scannerViewResult: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
   camera: {
     width: '100%',
     height: '100%',
@@ -403,7 +503,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', // Align children in a row
     justifyContent: 'space-between', // Space between buttons
     alignItems: 'center', // Center vertically
-    marginTop: -70, // Add some margin if needed
+    marginTop: -70,
     paddingHorizontal: 20, // Add horizontal padding
   },
   modalValidateButton: {
@@ -411,6 +511,9 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 5, // Optional: Add border radius for rounded corners
   },
+  modalValidateButtonDisabled: {
+    backgroundColor: '#A9A9A9'
+  }
 });
 
 export default ScannerScreen;

@@ -25,11 +25,9 @@ const ReceiptsScreen = ({ route }) => {
     const [loading, setLoading] = useState(false);
     const [expandedReferences, setExpandedReferences] = useState({});
     const [scanProgress, setScanProgress] = useState({});
-    const [modalVisible, setModalVisible] = useState(false);
     const [modalProducts, setModalProducts] = useState([]);
     const [modalReference, setModalReference] = useState(null);
     const [validateData, setValidateData] = useState({});
-    const [noOfScannedItems, setNoOfScannedItems] = useState(0);
     const navigation = useNavigation();
 
     // useEffect(() => {
@@ -94,7 +92,9 @@ const ReceiptsScreen = ({ route }) => {
                         quantity: product.demand_quantity,
                         stock: product.quantity // scanned units count for each product
                     })),
-                    source_document: order.source_document
+                    source_document: order.source_document,
+                    source_location_scan: order.source_location_scan,
+                    destination_location_scan: order.destination_location_scan,
                 };
 
             });
@@ -172,68 +172,68 @@ const ReceiptsScreen = ({ route }) => {
     }
 
 
-    const handleScanPress = (productCode, instanceIndex) => {
-        const progress = scanProgress[modalReference];
+    // const handleScanPress = (productCode, instanceIndex) => {
+    //     const progress = scanProgress[modalReference];
 
-        if (!progress) {
-            Alert.alert('Error', 'No progress found for this reference.');
-            return;
-        }
+    //     if (!progress) {
+    //         Alert.alert('Error', 'No progress found for this reference.');
+    //         return;
+    //     }
 
-        navigation.navigate('ScannerScreen', {
-            productCode,
-            origin: progress.source_document, // Pass the reference as origin
-            flag: 'Receipt', // Set the operation type
-            onScanComplete: (response) => {
-                // Handle the response from the scan
-                // if (response && response.data) {
-                //     const { message } = response.data;
-                //     // Alert.alert('Success', message);
+    //     navigation.navigate('ScannerScreen', {
+    //         productCode,
+    //         origin: progress.source_document, // Pass the reference as origin
+    //         flag: 'Receipt', // Set the operation type
+    //         onScanComplete: (response) => {
+    //             // Handle the response from the scan
+    //             // if (response && response.data) {
+    //             //     const { message } = response.data;
+    //             //     // Alert.alert('Success', message);
 
-                //     const updatedProducts = modalProducts.map(product => {
-                //         if (product.instanceIndex === instanceIndex) {
-                //             return { ...product, scanStatus: true }; // Set scanStatus to true
-                //         }
-                //         return product;
-                //     });
+    //             //     const updatedProducts = modalProducts.map(product => {
+    //             //         if (product.instanceIndex === instanceIndex) {
+    //             //             return { ...product, scanStatus: true }; // Set scanStatus to true
+    //             //         }
+    //             //         return product;
+    //             //     });
 
-                //     console.log("updatedProducts",updatedProducts);
+    //             //     console.log("updatedProducts",updatedProducts);
 
-                //     saveModalProducts(updatedProducts)
-                //     // setModalProducts(updatedProducts);
-                //     // setValidateData(prev => ({
-                //     //     ...prev, 
-                //     //     itemScanned: 1 
-                //     // }));
+    //             //     saveModalProducts(updatedProducts)
+    //             //     // setModalProducts(updatedProducts);
+    //             //     // setValidateData(prev => ({
+    //             //     //     ...prev, 
+    //             //     //     itemScanned: 1 
+    //             //     // }));
 
 
-                //     // Update scan progress for the scanned product
-                //     // setScanProgress(prev => {
-                //     //     const newProgress = { ...prev };
-                //     //     const productIndex = newProgress[modalReference].products.findIndex(
-                //     //         p => p.product_code === productCode
-                //     //     );
+    //             //     // Update scan progress for the scanned product
+    //             //     // setScanProgress(prev => {
+    //             //     //     const newProgress = { ...prev };
+    //             //     //     const productIndex = newProgress[modalReference].products.findIndex(
+    //             //     //         p => p.product_code === productCode
+    //             //     //     );
 
-                //     //     if (productIndex >= 0) {
-                //     //         if (newProgress[modalReference].products[productIndex].stock < newProgress[modalReference].products[productIndex].quantity) {
-                //     //             newProgress[modalReference].products[productIndex].stock += 1; // Increment product scanned count
-                //     //             newProgress[modalReference].stock += 1; // Increment total scanned count
-                //     //         } else {
-                //     //             Alert.alert('Info', 'All units scanned for this product');
-                //     //         }
-                //     //     }
-                //     //     return newProgress;
-                //     // });
-                // } else {
-                //     Alert.alert('Error', 'Failed to scan product. Please try again.');
-                // }
-                console.log("herer ----")
-                handleUpdateItemScanned();
-                loadModalProducts()
+    //             //     //     if (productIndex >= 0) {
+    //             //     //         if (newProgress[modalReference].products[productIndex].stock < newProgress[modalReference].products[productIndex].quantity) {
+    //             //     //             newProgress[modalReference].products[productIndex].stock += 1; // Increment product scanned count
+    //             //     //             newProgress[modalReference].stock += 1; // Increment total scanned count
+    //             //     //         } else {
+    //             //     //             Alert.alert('Info', 'All units scanned for this product');
+    //             //     //         }
+    //             //     //     }
+    //             //     //     return newProgress;
+    //             //     // });
+    //             // } else {
+    //             //     Alert.alert('Error', 'Failed to scan product. Please try again.');
+    //             // }
+    //             console.log("herer ----")
+    //             handleUpdateItemScanned();
+    //             loadModalProducts()
 
-            },
-        });
-    };
+    //         },
+    //     });
+    // };
 
     const handleScanComplete = (reference, scannedData, isGood, scanType) => {
         if (!isGood) {
@@ -325,7 +325,6 @@ const ReceiptsScreen = ({ route }) => {
         });
     }
 
-    console.log("validatedata", validateData);
 
     const toggleExpand = (item) => {
 
@@ -380,6 +379,12 @@ const ReceiptsScreen = ({ route }) => {
             flag: 'Receipt', // Set the operation type
             scanType: 'Stock',
             validateState: validateData.itemScanned,
+            validateJSON: {
+                data: {
+                    flag: "Receipt",
+                    origin: ""
+                }
+            },
             onScanComplete: (response) => {
                 // Handle the response from the scan
                 fetchData();
@@ -452,7 +457,6 @@ const ReceiptsScreen = ({ route }) => {
         navigation.navigate('ScannerScreen', {
             reference,
             scanType: 'Put',
-            expectedBarcode: firstItem.source_document,
             validateState: stockQty,
             validateJSON: {
                 data: {
@@ -471,34 +475,34 @@ const ReceiptsScreen = ({ route }) => {
     };
 
     // Render each product instance in the modal with a scan button/icon
-    const renderModalProduct = ({ item, index }) => {
-        // Computed count of scanned items for this product code
-        const scannedUnits = scanProgress[modalReference]?.products.find(p => p.product_code === item.product_code)?.stock || 0;
-        // Count how many previous instances of this product in the expanded array have been scanned, or use overall stock count logically
-        // We simplify by considering scannedUnits as scanned count, so disable scan button if scannedUnits >= quantity
-        const disabled = scannedUnits >= item.quantity;
+    // const renderModalProduct = ({ item, index }) => {
+    //     // Computed count of scanned items for this product code
+    //     const scannedUnits = scanProgress[modalReference]?.products.find(p => p.product_code === item.product_code)?.stock || 0;
+    //     // Count how many previous instances of this product in the expanded array have been scanned, or use overall stock count logically
+    //     // We simplify by considering scannedUnits as scanned count, so disable scan button if scannedUnits >= quantity
+    //     const disabled = scannedUnits >= item.quantity;
 
-        return (
-            <View style={styles.modalProductItem} key={item.product_code + '_' + item.instanceIndex}>
-                <Text style={styles.modalProductText}>{item.product} (Code: {item.product_code})</Text>
-                <TouchableOpacity
-                    style={[styles.scanIconButton, disabled && styles.scanIconButtonDisabled]}
-                    onPress={() => {
-                        if (disabled) {
-                            Alert.alert('Info', 'All units scanned for this product');
-                            return;
-                        }
-                        handleScanPress(item.product_code, item.instanceIndex);
-                    }}
-                    disabled={item.scanStatus === "true"}
-                >
-                    {item.scanStatus === "false" ?
-                        <Icon name="barcode-outline" size={30} color={disabled ? Colors.lightGray : Colors.theme} /> :
-                        <Icon name="checkmark" size={30} color={disabled ? Colors.lightGray : Colors.theme} />}
-                </TouchableOpacity>
-            </View>
-        );
-    };
+    //     return (
+    //         <View style={styles.modalProductItem} key={item.product_code + '_' + item.instanceIndex}>
+    //             <Text style={styles.modalProductText}>{item.product} (Code: {item.product_code})</Text>
+    //             <TouchableOpacity
+    //                 style={[styles.scanIconButton, disabled && styles.scanIconButtonDisabled]}
+    //                 onPress={() => {
+    //                     if (disabled) {
+    //                         Alert.alert('Info', 'All units scanned for this product');
+    //                         return;
+    //                     }
+    //                     handleScanPress(item.product_code, item.instanceIndex);
+    //                 }}
+    //                 disabled={item.scanStatus === "true"}
+    //             >
+    //                 {item.scanStatus === "false" ?
+    //                     <Icon name="barcode-outline" size={30} color={disabled ? Colors.lightGray : Colors.theme} /> :
+    //                     <Icon name="checkmark" size={30} color={disabled ? Colors.lightGray : Colors.theme} />}
+    //             </TouchableOpacity>
+    //         </View>
+    //     );
+    // };
 
     const calStockQty = (progress) => {
         return progress.products.reduce((accumulator, product) => {
@@ -538,11 +542,13 @@ const ReceiptsScreen = ({ route }) => {
                                     }, 0) >= progress.total}
                                 >
                                     <Icon
-                                        name={getScanButtonIcon(item.reference, 'stock')}
+                                        name={stockQty >= progress.total ? 'checkmark-circle' : 'bulb-outline'}
                                         size={wp('6%')}
-                                        color={getScanButtonColor(item.reference, 'stock')}
+                                        color={Colors.theme}
                                     />
-                                    <Text style={styles.scanText}>Stock</Text>
+                                    <Text style={styles.scanText}>
+                                        Stock
+                                    </Text>
                                     <Text style={styles.scanProgressText}>
                                         {progress.products.reduce((accumulator, product) => {
                                             return accumulator + product.stock;
@@ -552,17 +558,21 @@ const ReceiptsScreen = ({ route }) => {
 
                                 <TouchableOpacity
                                     style={styles.scanButton}
+                                    disabled={item.destination_location_scan}
                                     onPress={() => handlePutScanPress(item.reference, stockQty, item.source_document)}
                                 >
-                                    <Icon
+                                    {item.destination_location_scan ?
+                                        <Icon name={'checkmark-circle'} size={wp('6%')} color={Colors.theme} /> :
+                                        <Icon name={'barcode-outline'} size={wp('6%')} color={Colors.theme} />}
+                                    {/* <Icon
                                         name={getScanButtonIcon(item.reference, 'put')}
                                         size={wp('6%')}
                                         color={getScanButtonColor(item.reference, 'put')}
-                                    />
+                                    /> */}
                                     <Text style={styles.scanText}>Put</Text>
-                                    <Text style={styles.scanProgressText}>
+                                    {/* <Text style={styles.scanProgressText}>
                                         {progress.put}/1
-                                    </Text>
+                                    </Text> */}
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -636,7 +646,7 @@ const ReceiptsScreen = ({ route }) => {
             />
 
             {/* Modal for Stock Scanning */}
-            <Modal
+            {/* <Modal
                 visible={modalVisible}
                 animationType="slide"
                 transparent={true}
@@ -663,7 +673,7 @@ const ReceiptsScreen = ({ route }) => {
 
                     </View>
                 </View>
-            </Modal>
+            </Modal> */}
         </View>
     );
 };
@@ -723,7 +733,7 @@ const styles = StyleSheet.create({
         marginBottom: hp('1%'),
     },
     scanButton: {
-        justifyContent: 'center',
+        justifyContent: 'top',
         alignItems: 'center',
         borderRadius: wp('2%'),
         paddingVertical: wp('3%'),

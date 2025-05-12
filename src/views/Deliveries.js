@@ -36,7 +36,6 @@ const DeliveriesScreen = ({ route }) => {
     const fetchData = async () => {
         try {
             const response = await getDataUsingService(Services.deliveryOrders);
-            console.log("API Response:", response);
 
             const result = response;
             const transformedData = transformData(result.result);
@@ -54,7 +53,7 @@ const DeliveriesScreen = ({ route }) => {
                         product_id: product.product_id,
                         product_code: product.product_code,
                         quantity: product.quantity,
-                        stock: 0
+                        stock: product.new_quantity || 0,
                     })),
                     source_document: order.source_document
                 };
@@ -85,6 +84,8 @@ const DeliveriesScreen = ({ route }) => {
                     product_code: product.product_code,
                     state: order.state,
                     source_document: order.source_document,
+                    source_location_scan: order.source_location_scan,
+                    destination_location_scan: order.destination_location_scan,
                 });
             });
         });
@@ -103,7 +104,7 @@ const DeliveriesScreen = ({ route }) => {
 
             if (!referenceData) return prev;
 
-            if (scanType === 'pick') {
+            if (scanType === 'Pick') {
                 // For pick, we only scan the source_document once
                 if (scannedData && scannedData === referenceData.source_document) {
                     newProgress[reference].pick = 1;
@@ -137,7 +138,7 @@ const DeliveriesScreen = ({ route }) => {
         const progress = scanProgress[reference];
         if (!progress) return 'bulb-outline';
 
-        if (scanType === 'pick') {
+        if (scanType === 'Pick') {
             return progress.pick ? 'checkmark-circle' : 'barcode-outline';
         } else {
             // For stock scan
@@ -157,7 +158,7 @@ const DeliveriesScreen = ({ route }) => {
         const progress = scanProgress[reference];
         if (!progress) return Colors.theme;
 
-        if (scanType === 'pick') {
+        if (scanType === 'Pick') {
             return progress.pick ? Colors.success : Colors.theme;
         } else {
             // For stock scan
@@ -200,7 +201,7 @@ const DeliveriesScreen = ({ route }) => {
 
         const progress = scanProgress[reference];
         if (progress) {
-            if (scanType === 'pick') {
+            if (scanType === 'Pick') {
                 if (progress.pick === 1) {
                     Alert.alert('Info', 'PICK scan already completed');
                     return;
@@ -217,6 +218,7 @@ const DeliveriesScreen = ({ route }) => {
             reference,
             scanType: scanType,
             validateState: 1,
+            origin: source_document,
             validateJSON: {
                 data: {
                     flag: "Delivery",
@@ -236,6 +238,10 @@ const DeliveriesScreen = ({ route }) => {
         };
 
         const isAssigned = item.state === 'assigned';
+
+        const stockQty = progress.products.reduce((accumulator, product) => {
+            return accumulator + product.stock;
+        }, 0);
 
         return (
             <View style={styles.card}>
@@ -259,31 +265,29 @@ const DeliveriesScreen = ({ route }) => {
                             <View style={styles.scanIconsSection}>
                                 <TouchableOpacity
                                     style={styles.scanButton}
-                                    onPress={() => handleScannerPress(item.reference, 'pick')}
+                                    onPress={() => handleScannerPress(item.reference, 'Pick', item.source_document)}
+                                    disabled={item.source_location_scan}
                                 >
                                     <Icon
-                                        name={getScanButtonIcon(item.reference, 'pick')}
+                                        name={item.source_location_scan ? 'checkmark-circle' : 'barcode-outline'}
                                         size={wp('6%')}
-                                        color={getScanButtonColor(item.reference, 'pick')}
+                                        color={Colors.theme}
                                     />
                                     <Text style={styles.scanText}>Pick</Text>
-                                    <Text style={styles.scanProgressText}>
-                                        {progress.pick}/1
-                                    </Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
                                     style={styles.scanButton}
-                                    onPress={() => handleScannerPress(item.reference, 'Put', item.source_document)}
+                                    onPress={() => handleScannerPress(item.reference, 'Stock', item.source_document)}
                                 >
                                     <Icon
-                                        name={getScanButtonIcon(item.reference, 'stock')}
+                                        name={stockQty >= progress.total ? 'checkmark-circle' : 'bulb-outline'}
                                         size={wp('6%')}
-                                        color={getScanButtonColor(item.reference, 'stock')}
+                                        color={Colors.theme}
                                     />
                                     <Text style={styles.scanText}>Stock</Text>
                                     <Text style={styles.scanProgressText}>
-                                        {progress.stock}/{progress.total}
+                                        {stockQty}/{progress.total}
                                     </Text>
                                 </TouchableOpacity>
                             </View>

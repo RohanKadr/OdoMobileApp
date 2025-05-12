@@ -37,7 +37,6 @@ const PickingScreen = ({ route }) => {
     const fetchData = async () => {
         try {
             const response = await getDataUsingService(Services.pickingOrders);
-            console.log("API Response:", response);
 
             const result = response;
             const transformedData = transformData(result.result);
@@ -50,12 +49,12 @@ const PickingScreen = ({ route }) => {
                     pick: 0,
                     stock: 0,
                     put: 0,
-                    total: order.products.reduce((sum, product) => sum + product.quantity, 0),
+                    total: order.products.reduce((sum, product) => sum + product.demand_quantity, 0),
                     products: order.products.map(product => ({
                         product_id: product.product_id,
                         product_code: product.product_code,
                         quantity: product.quantity,
-                        stock: 0
+                        stock: product.new_quantity || 0,
                     })),
                     source_document: order.source_document
                 };
@@ -86,6 +85,8 @@ const PickingScreen = ({ route }) => {
                     product_code: product.product_code,
                     state: order.state,
                     source_document: order.source_document,
+                    source_location_scan: order.source_location_scan,
+                    destination_location_scan: order.destination_location_scan,
                 });
             });
         });
@@ -104,20 +105,14 @@ const PickingScreen = ({ route }) => {
 
             if (!referenceData) return prev;
 
-            console.log('Scan Completed:', {
-                reference,
-                scannedData,
-                scanType,
-                source_document: referenceData.source_document
-            });
 
-            if (scanType === 'pick' || scanType === 'put') {
+            if (scanType === 'Pick' || scanType === 'Put') {
                 if (scannedData && scannedData === referenceData.source_document) {
                     newProgress[reference][scanType] = 1;
                 } else {
                     Alert.alert('Error', 'Scanned document does not match the source document');
                 }
-            } else if (scanType === 'stock') {
+            } else if (scanType === 'Stock') {
                 const productIndex = referenceData.products.findIndex(
                     p => p.product_code === scannedData
                 );
@@ -143,7 +138,7 @@ const PickingScreen = ({ route }) => {
         const progress = scanProgress[reference];
         if (!progress) return 'bulb-outline';
 
-        if (scanType === 'pick' || scanType === 'put') {
+        if (scanType === 'Pick' || scanType === 'Put') {
             return progress[scanType] ? 'checkmark-circle' : 'barcode-outline';
         } else {
             const totalItems = progress.total;
@@ -162,7 +157,7 @@ const PickingScreen = ({ route }) => {
         const progress = scanProgress[reference];
         if (!progress) return Colors.theme;
 
-        if (scanType === 'pick' || scanType === 'put') {
+        if (scanType === 'Pick' || scanType === 'Put') {
             return progress[scanType] ? Colors.success : Colors.theme;
         } else {
             const scannedItems = progress.stock || 0;
@@ -192,7 +187,7 @@ const PickingScreen = ({ route }) => {
         }));
     };
 
-    const handleScannerPress = (reference, scanType,source_document) => {
+    const handleScannerPress = (reference, scanType, source_document) => {
         const orderGroup = groupedData[reference];
         if (!orderGroup || orderGroup.length === 0) return;
 
@@ -204,12 +199,12 @@ const PickingScreen = ({ route }) => {
 
         const progress = scanProgress[reference];
         if (progress) {
-            if (scanType === 'pick' || scanType === 'put') {
+            if (scanType === 'Pick' || scanType === 'Put') {
                 if (progress[scanType] === 1) {
                     Alert.alert('Info', `${scanType.toUpperCase()} scan already completed`);
                     return;
                 }
-            } else if (scanType === 'stock') {
+            } else if (scanType === 'Stock') {
                 if (progress.stock >= progress.total) {
                     Alert.alert('Info', 'All items have already been scanned');
                     return;
@@ -227,57 +222,57 @@ const PickingScreen = ({ route }) => {
                     origin: source_document
                 }
             },
-            expectedBarcode: scanType === 'pick' || scanType === 'put' ? firstItem.source_document : null,
+            expectedBarcode: scanType === 'Pick' || scanType === 'Put' ? firstItem.source_document : null,
             onScanned: (ref, scannedBarcode, isGood) => handleScanComplete(ref, scannedBarcode, isGood, scanType)
         });
     };
 
-    const handlePutScanPress = (reference,scanType, source_document) => {
-            const orderGroup = groupedData[reference];
-            if (!orderGroup || orderGroup.length === 0) return;
-            const firstItem = orderGroup[0];
-    
-            if (firstItem.state !== 'assigned') {
-                Alert.alert('Info', 'This order is not in scannable');
-                return;
-            }
-    
-            const progress = scanProgress[reference];
-            if (progress.put === 1) {
-                Alert.alert('Info', 'PUT scan already completed');
-                return;
-            }
-    
-            navigation.navigate('ScannerScreen', {
-                reference,
-                scanType: 'Put',
-                // expectedBarcode: firstItem.source_document,
-                validateState: 1,
-                validateJSON: {
-                    data: {
-                        flag: "Picking",
-                        origin: source_document
-                    }
-                },
-                onScanned: (ref, scannedBarcode, isGood) => handleScanComplete(ref, scannedBarcode, isGood, 'put'),
-            });
-        };
+    const handlePutScanPress = (reference, scanType, source_document, stockQty) => {
+        const orderGroup = groupedData[reference];
+        if (!orderGroup || orderGroup.length === 0) return;
+        const firstItem = orderGroup[0];
 
-    const handleStockScanPress = (reference, process, stockQty) => {
+        if (firstItem.state !== 'assigned') {
+            Alert.alert('Info', 'This order is not in scannable');
+            return;
+        }
+
+        const progress = scanProgress[reference];
+        if (progress.put === 1) {
+            Alert.alert('Info', 'PUT scan already completed');
+            return;
+        }
+
+        navigation.navigate('ScannerScreen', {
+            reference,
+            scanType: 'Put',
+            // expectedBarcode: firstItem.source_document,
+            validateState: stockQty,
+            validateJSON: {
+                data: {
+                    flag: "Picking",
+                    origin: source_document
+                }
+            },
+            onScanned: (ref, scannedBarcode, isGood) => handleScanComplete(ref, scannedBarcode, isGood, 'Put'),
+        });
+    };
+
+    const handleStockScanPress = (reference, scanType, source_document) => {
 
         const orderGroup = groupedData[reference];
         if (!orderGroup || orderGroup.length === 0) return;
 
         const firstItem = orderGroup[0];
-        console.log("firstItem", firstItem)
         navigation.navigate('ScannerScreen', {
-            // productCode,
-            origin: firstItem.source_document, // Pass the reference as origin
+            origin: source_document,
             flag: 'Picking', // Set the operation type
-            onScanComplete: (response) => {
-                // Handle the response from the scan
-                fetchData();
-
+            scanType: 'Stock',
+            validateJSON: {
+                data: {
+                    flag: "Picking",
+                    origin: source_document
+                }
             },
         });
     };
@@ -293,6 +288,9 @@ const PickingScreen = ({ route }) => {
 
         const isAssigned = item.state === 'assigned';
 
+        const stockQty = progress.products.reduce((accumulator, product) => {
+            return accumulator + product.stock;
+        }, 0);
         return (
             <View style={styles.card}>
                 <TouchableOpacity onPress={() => toggleExpand(item.reference)} style={styles.header}>
@@ -315,47 +313,43 @@ const PickingScreen = ({ route }) => {
                             <View style={styles.scanIconsSection}>
                                 <TouchableOpacity
                                     style={styles.scanButton}
-                                    onPress={() => handleScannerPress(item.reference, 'pick')}
+                                    onPress={() => handleScannerPress(item.reference, 'Pick', item.source_document)}
+                                    disabled={item.source_location_scan}
                                 >
                                     <Icon
-                                        name={getScanButtonIcon(item.reference, 'pick')}
+                                        name={item.source_location_scan ? 'checkmark-circle' : 'barcode-outline'}
                                         size={wp('6%')}
-                                        color={getScanButtonColor(item.reference, 'pick')}
+                                        color={Colors.theme}
                                     />
                                     <Text style={styles.scanText}>Pick</Text>
-                                    <Text style={styles.scanProgressText}>
-                                        {progress.pick}/1
-                                    </Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
                                     style={styles.scanButton}
-                                    onPress={() => handleStockScanPress(item.reference, 'stock',)}
+                                    onPress={() => handleStockScanPress(item.reference, 'Stock', item.source_document)}
+                                    disabled={stockQty >= progress.total}
                                 >
                                     <Icon
-                                        name={getScanButtonIcon(item.reference, 'stock')}
+                                        name={stockQty >= progress.total ? 'checkmark-circle' : 'bulb-outline'}
                                         size={wp('6%')}
-                                        color={getScanButtonColor(item.reference, 'stock')}
+                                        color={Colors.theme}
                                     />
                                     <Text style={styles.scanText}>stock</Text>
                                     <Text style={styles.scanProgressText}>
-                                        {progress.stock}/{progress.total}
+                                        {stockQty}/{progress.total}
                                     </Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
                                     style={styles.scanButton}
-                                    onPress={() => handlePutScanPress(item.reference, 'put',item.source_document)}
+                                    onPress={() => handlePutScanPress(item.reference, 'Put', item.source_document, stockQty)}
                                 >
                                     <Icon
-                                        name={getScanButtonIcon(item.reference, 'put')}
+                                        name={item.destination_location_scan ? 'checkmark-circle' : 'barcode-outline'}
                                         size={wp('6%')}
-                                        color={getScanButtonColor(item.reference, 'put')}
+                                        color={Colors.theme}
                                     />
                                     <Text style={styles.scanText}>Put</Text>
-                                    <Text style={styles.scanProgressText}>
-                                        {progress.put}/1
-                                    </Text>
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -490,7 +484,7 @@ const styles = StyleSheet.create({
         marginBottom: hp('1%'),
     },
     scanButton: {
-        justifyContent: 'center',
+        justifyContent: 'top',
         alignItems: 'center',
         borderRadius: wp('2%'),
         paddingVertical: wp('3%'),

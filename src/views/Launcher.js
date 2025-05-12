@@ -32,7 +32,7 @@ const Launcher = ({navigation}) => {
             resizeMode="contain"
         />
         
-        <Text style={styles.appName}>ODOO Scanner</Text>
+        <Text style={styles.appName}>Generic WMS</Text>
         
         <ActivityIndicator 
             size="large" 

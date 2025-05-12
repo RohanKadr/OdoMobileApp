@@ -1,6 +1,6 @@
 export default Strings = {
     TXT_SCAN_FAILED: 'The Scanned code is not valid.',
-    TXT_LOGIN_HEADER: 'ODOO LOGIN',
+    TXT_LOGIN_HEADER: 'Generic WMS',
     TXT_SUCCESS: 'SUCCESS!',
     TXT_ERROR: 'ERROR',
     TXT_CANCEL: 'Cancel',

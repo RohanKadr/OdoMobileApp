@@ -174,8 +174,8 @@ const ManualEntryForm = ({ onComplete, onCancel, initialData }) => {
                   activeOpacity={0.7}
                 >
                   <Text style={{ color: formData.effectiveDate ? 'black' : '#aaa' }}>
-                    {formData.scheduledDate
-                      ? formatDateOnly(new Date(formData.scheduledDate))
+                    {formData.effectiveDate
+                      ? formatDateOnly(new Date(formData.effectiveDate))
                       : ''}
                   </Text>
                 </TouchableOpacity>
